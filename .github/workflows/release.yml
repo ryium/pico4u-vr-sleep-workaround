@@ -40,6 +40,9 @@ jobs:
       - name: rust cache
         uses: swatinem/rust-cache@v2
 
+      - name: setup adb
+        run: .\scripts\setup_adb.ps1
+
       - name: build and create release
         uses: tauri-apps/tauri-action@v0
         env:

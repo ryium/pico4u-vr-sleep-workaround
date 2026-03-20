@@ -2311,8 +2311,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "pico-awake"
-version = "0.1.0"
+name = "pico4u-vr-sleep-workaround"
+version = "0.1.0-rc1"
 dependencies = [
  "chrono",
  "serde",
