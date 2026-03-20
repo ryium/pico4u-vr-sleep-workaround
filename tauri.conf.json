@@ -21,16 +21,16 @@
       "icons/icon.png"
     ]
   },
-  "productName": "pico-awake",
+  "productName": "pico4u-vr-sleep-workaround",
   "version": "0.1.0",
-  "identifier": "com.tauri.pico.awake",
+  "identifier": "com.tauri.pico4uvrsleepworkaround",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": false,
-        "title": "Pico Awake",
+        "title": "pico4u-vr-sleep-workaround",
         "width": 400,
         "height": 700
       }

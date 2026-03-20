@@ -1,3 +1,7 @@
+# Ignore application binaries and configurations
+bin/
+pico4u_config.json
+
 /gen
 /target
 
