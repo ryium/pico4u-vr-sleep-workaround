@@ -1,0 +1,21 @@
+{
+  "name": "pico-awake",
+  "version": "0.1.0",
+  "description": "Pico 4 Ultra Sleep Workaround",
+  "author": "ryium",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "postinstall": "pnpm -C frontend install",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-process": "~2.3.1",
+    "@tauri-apps/plugin-shell": "~2.3.4"
+  }
+}

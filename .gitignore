@@ -1,0 +1,9 @@
+/gen
+/target
+
+dist
+node_modules
+
+# IDE settings
+.idea
+.vscode

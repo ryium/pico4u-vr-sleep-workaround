@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-debugger": "error",
+    "no-console": "off",
+    "eqeqeq": "warn"
+  }
+}

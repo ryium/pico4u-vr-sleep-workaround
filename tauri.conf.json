@@ -1,0 +1,43 @@
+{
+  "build": {
+    "beforeDevCommand": "pnpm -C frontend dev",
+    "beforeBuildCommand": "pnpm -C frontend build",
+    "frontendDist": "frontend/dist",
+    "devUrl": "http://localhost:5173"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "externalBin": [
+      "bin/adb"
+    ],
+    "resources": [
+      "bin/adb-NOTICE.txt"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  },
+  "productName": "pico-awake",
+  "version": "0.1.0",
+  "identifier": "com.tauri.pico.awake",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": false,
+        "title": "Pico Awake",
+        "width": 400,
+        "height": 700
+      }
+    ],
+    "security": {
+      "freezePrototype": false,
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  }
+}

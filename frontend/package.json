@@ -1,0 +1,42 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.1.0",
+  "author": "ryium",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint -c .oxlintrc.json src",
+    "lint:fix": "oxlint -c .oxlintrc.json --fix src",
+    "format": "oxfmt src"
+  },
+  "dependencies": {
+    "@charcoal-ui/foundation": "^5.4.4",
+    "@charcoal-ui/icons": "^5.4.4",
+    "@charcoal-ui/react": "^5.4.4",
+    "@charcoal-ui/theme": "^5.4.4",
+    "@tauri-apps/api": "^2.10.1",
+    "i18next": "^25.8.11",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-i18next": "^16.5.4"
+  },
+  "devDependencies": {
+    "@charcoal-ui/tailwind-config": "^5.4.4",
+    "@tailwindcss/vite": "^4.2.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.24",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1"
+  }
+}
