@@ -1,5 +1,5 @@
 [package]
-name = "pico-awake"
+name = "pico4u-vr-sleep-workaround"
 version = "0.1.0"
 description = "Keep Pico 4 Ultra awake"
 authors = ["ryium"]
