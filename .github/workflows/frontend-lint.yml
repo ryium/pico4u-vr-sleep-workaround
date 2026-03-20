@@ -1,0 +1,37 @@
+name: Frontend Lint and Format
+
+on:
+  push:
+    branches:
+      - 'dev/*'
+  workflow_dispatch:
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run linter
+        working-directory: ./frontend
+        run: pnpm run lint
+
+      - name: Run formatter check
+        working-directory: ./frontend
+        run: pnpm run format
