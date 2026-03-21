@@ -9,7 +9,8 @@
     "postinstall": "pnpm -C frontend install",
     "dev": "tauri dev",
     "build": "tauri build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "version": "node scripts/sync-version.mjs && git add frontend/package.json Cargo.toml tauri.conf.json"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.6"

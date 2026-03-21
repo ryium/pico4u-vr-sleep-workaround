@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - 'release/*'
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -43,13 +43,23 @@ jobs:
       - name: setup adb
         run: .\scripts\setup_adb.ps1
 
+      - name: get release version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$GITHUB_REF_NAME
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            VERSION="v__VERSION__"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: build and create release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'pico4u-vr-sleep-workaround v__VERSION__'
+          releaseName: 'pico4u-vr-sleep-workaround ${{ env.VERSION }}'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false

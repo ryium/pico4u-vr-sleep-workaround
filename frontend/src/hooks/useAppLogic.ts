@@ -16,6 +16,7 @@ export function useAppLogic() {
   const [isDebug, setIsDebug] = useState(false)
   const [connectionMode, setConnectionMode] = useState<'wired' | 'wireless' | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [wirelessSetupStatus, setWirelessSetupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [dimAfterHours, setDimAfterHours] = useState<number>(0)
   const { theme, setTheme } = useTheme()
 
@@ -154,6 +155,7 @@ export function useAppLogic() {
 
   const setupWireless = useCallback(async () => {
     try {
+      setWirelessSetupStatus('loading')
       addLog(t('log_wireless_init'))
       addLog(t('log_enable_tcpip'))
       await invoke('enable_tcpip')
@@ -187,10 +189,12 @@ export function useAppLogic() {
       if (res && res.trim()) addLog(res)
 
       addLog(t('log_wireless_complete'))
+      setWirelessSetupStatus('success')
       checkDevices()
     } catch (e) {
       addLog(t('log_wireless_error', { error: e }))
       addLog(t('log_wireless_note'))
+      setWirelessSetupStatus('error')
       updateDeviceIp('')
     }
   }, [t, addLog, checkDevices, updateDeviceIp])
@@ -250,6 +254,7 @@ export function useAppLogic() {
     handleModeSelect,
     checkDevices,
     setupWireless,
+    wirelessSetupStatus,
     connectManual,
     toggleKeepAwake,
     getDeviceModel,

@@ -3,8 +3,10 @@ import { useAppContext } from '../context/AppContext'
 import { HowToSection } from './HowToSection'
 
 export function ConnectionPanel() {
-  const { t, connectionMode, deviceIp, checkDevices, setupWireless, connectManual } =
+  const { t, connectionMode, deviceIp, checkDevices, setupWireless, wirelessSetupStatus, connectManual } =
     useAppContext()
+
+  const isSettingUp = wirelessSetupStatus === 'loading'
 
   return (
     <div className='flex flex-col gap-4'>
@@ -32,9 +34,44 @@ export function ConnectionPanel() {
             </Button>
           ) : (
             <>
-              <Button onClick={setupWireless} variant='Navigation' fullWidth>
-                {t('btn_setup_wireless')}
+              <Button onClick={setupWireless} variant='Navigation' fullWidth disabled={isSettingUp}>
+                {isSettingUp ? t('wireless_status_loading') : t('btn_setup_wireless')}
               </Button>
+
+              {/* Wireless setup status banner */}
+              {wirelessSetupStatus !== 'idle' && (
+                <div
+                  className={`flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm font-medium animate-fadeIn ${
+                    wirelessSetupStatus === 'loading'
+                      ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                      : wirelessSetupStatus === 'success'
+                        ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                        : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                  }`}
+                >
+                  {/* Icon */}
+                  {wirelessSetupStatus === 'loading' && (
+                    <span className='w-4 h-4 shrink-0 border-2 border-blue-300 dark:border-blue-600 border-t-blue-600 dark:border-t-blue-300 rounded-full animate-spin' />
+                  )}
+                  {wirelessSetupStatus === 'success' && (
+                    <svg className='w-4 h-4 shrink-0' viewBox='0 0 20 20' fill='currentColor'>
+                      <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clipRule='evenodd' />
+                    </svg>
+                  )}
+                  {wirelessSetupStatus === 'error' && (
+                    <svg className='w-4 h-4 shrink-0' viewBox='0 0 20 20' fill='currentColor'>
+                      <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clipRule='evenodd' />
+                    </svg>
+                  )}
+                  {/* Text */}
+                  <span>
+                    {wirelessSetupStatus === 'loading' && t('wireless_status_loading')}
+                    {wirelessSetupStatus === 'success' && t('wireless_status_success')}
+                    {wirelessSetupStatus === 'error' && t('wireless_status_error')}
+                  </span>
+                </div>
+              )}
+
               <Button onClick={connectManual} fullWidth>
                 {t('btn_connect_manual')}
               </Button>
