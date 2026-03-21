@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - 'release/*'
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -47,9 +47,9 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          VERSION=${GITHUB_REF_NAME#release/}
+          VERSION=$GITHUB_REF_NAME
           if [[ "$GITHUB_REF" != refs/tags/* ]]; then
-            VERSION="__VERSION__"
+            VERSION="v__VERSION__"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'pico4u-vr-sleep-workaround v${{ env.VERSION }}'
+          releaseName: 'pico4u-vr-sleep-workaround ${{ env.VERSION }}'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
