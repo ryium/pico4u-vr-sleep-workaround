@@ -18,11 +18,18 @@ pico4u-vr-sleep-workaround is a workaround tool designed to prevent the Pico 4 U
 
 ![UI](./assets/screenshot.png)
 
+## 🔧 Prerequisites: Enable USB Debugging
+
+Before using the tool, you must enable Developer Mode and USB Debugging on your Pico 4 Ultra:
+1. On your headset, go to **Settings > General > About**.
+2. Click **Software Version** 7 times to enable Developer Mode.
+3. Go back to **Settings > Developer** and toggle **USB Debugging** to ON.
+
 ## 🚀 Setup & Usage
 
 1. Download the latest release for your platform (Windows `nsis` / `msi` installers are provided).
 2. Install and launch the application.
-3. Ensure your Pico 4 Ultra is connected via USB or Wi-Fi with **USB Debugging** enabled.
+3. Connect your Pico 4 Ultra via USB or Wi-Fi (if a USB debugging prompt appears in the headset, select "Allow").
 4. Select your connection mode and click **Start Keep Alive**.
 
 ## 👨‍💻 For Developers
