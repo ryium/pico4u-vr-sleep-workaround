@@ -21,10 +21,12 @@ try {
   console.log(`✓ frontend/package.json updated`);
 
   // 2. tauri.conf.json
+  // WiX MSI explicitly forbids non-numeric build identifiers like -rc1
+  const tauriVersion = newVersion.split('-')[0];
   const tauri = JSON.parse(readFileSync(paths.tauri, 'utf8'));
-  tauri.version = newVersion;
+  tauri.version = tauriVersion;
   writeFileSync(paths.tauri, JSON.stringify(tauri, null, 2) + '\n');
-  console.log(`✓ tauri.conf.json updated`);
+  console.log(`✓ tauri.conf.json updated to ${tauriVersion}`);
 
   // 3. Cargo.toml
   let cargo = readFileSync(paths.cargo, 'utf8');
