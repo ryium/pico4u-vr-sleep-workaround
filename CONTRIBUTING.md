@@ -59,3 +59,19 @@ This will compile the frontend into `frontend/dist`, compile the Rust backend, b
 - `frontend/` - Vite / React / TypeScript web UI and components.
 - `bin/` - Required directory for custom external binaries (like `adb`).
 - `tauri.conf.json` - Core Tauri configuration and window settings.
+
+## 🔖 Version Management
+
+To bump the application version, we use `pnpm version` to ensure versions are synchronized across the root `package.json`, `frontend/package.json`, `Cargo.toml`, and `tauri.conf.json`.
+
+Run the following command in the project root:
+
+```bash
+# Bump patch version (e.g., 0.1.0 -> 0.1.1)
+pnpm version patch
+
+# Or specify an exact version (e.g., for release candidates)
+pnpm version 0.1.1-rc1
+```
+
+A pre-configured script (`scripts/sync-version.mjs`) will automatically update all required files and stage them for the version commit.
