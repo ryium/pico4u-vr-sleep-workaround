@@ -60,11 +60,11 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'pico4u-vr-sleep-workaround ${{ env.VERSION }}'
-          releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
           projectPath: "./"
+          generateReleaseNotes: true
 
       - name: list targets
         if: failure()
