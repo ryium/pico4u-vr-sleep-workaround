@@ -122,33 +122,52 @@ pub async fn start_keep_awake(
 
     // Main Keep-Awake Task
     let task = tokio::spawn(async move {
+        // Drop時に確実にプロセスを終了させるラッパー
+        struct ChildGuard(Option<tauri_plugin_shell::process::CommandChild>);
+        impl Drop for ChildGuard {
+            fn drop(&mut self) {
+                if let Some(child) = self.0.take() {
+                    let _ = child.kill();
+                }
+            }
+        }
+
+        let spawn_adb = || -> Result<ChildGuard, String> {
+            let (_, child) = app_handle_task.shell()
+                .sidecar("adb")
+                .map_err(|e| format!("Sidecar configuration error: {}", e))?
+                .args(["shell"])
+                .spawn()
+                .map_err(|e| format!("Failed to spawn adb shell: {}", e))?;
+            Ok(ChildGuard(Some(child)))
+        };
+
+        let mut opt_guard = spawn_adb().ok();
         let mut interval = interval(Duration::from_secs(3));
         
         while is_running.load(Ordering::Relaxed) {
             interval.tick().await;
 
-            if debug_mode.load(Ordering::Relaxed) {
-                let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
-                let _ = app_handle_task.emit(
-                    "debug-log",
-                    format!("[{}] Sending keyevent 224...", timestamp),
-                );
-            }
-
-            if let Err(e) = run_adb_command(&app_handle_task, &vec![
-                "shell".to_string(),
-                "input".to_string(),
-                "keyevent".to_string(),
-                "224".to_string(),
-            ])
-            .await
-            {
-                if debug_mode.load(Ordering::Relaxed) {
-                    let _ = app_handle_task.emit("debug-log", format!("Error sending keyevent: {}", e));
+            if let Some(guard) = &mut opt_guard {
+                if let Err(e) = guard.0.as_mut().unwrap().write(b"input keyevent 224\n") {
+                    if debug_mode.load(Ordering::Relaxed) {
+                        let _ = app_handle_task.emit("debug-log", format!("Error writing to adb shell: {}", e));
+                    }
+                    #[cfg(debug_assertions)]
+                    eprintln!("Failed to write to adb shell, restarting process: {}", e);
+                    
+                    // Try to restart ADB
+                    opt_guard = spawn_adb().ok();
+                } else if debug_mode.load(Ordering::Relaxed) {
+                    let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+                    let _ = app_handle_task.emit(
+                        "debug-log",
+                        format!("[{}] Sent keyevent 224 (常駐ADB)", timestamp),
+                    );
                 }
-                // Don't spam stderr in production
-                #[cfg(debug_assertions)]
-                eprintln!("Failed to send keyevent: {}", e);
+            } else {
+                // If it was none, try to restart
+                opt_guard = spawn_adb().ok();
             }
         }
     });
