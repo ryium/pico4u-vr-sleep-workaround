@@ -16,7 +16,9 @@ export function useAppLogic() {
   const [isDebug, setIsDebug] = useState(false)
   const [connectionMode, setConnectionMode] = useState<'wired' | 'wireless' | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [wirelessSetupStatus, setWirelessSetupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [wirelessSetupStatus, setWirelessSetupStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
   const [dimAfterHours, setDimAfterHours] = useState<number>(0)
   const { theme, setTheme } = useTheme()
 
