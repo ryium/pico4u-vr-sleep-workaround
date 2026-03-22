@@ -16,7 +16,9 @@ export function useAppLogic() {
   const [isDebug, setIsDebug] = useState(false)
   const [connectionMode, setConnectionMode] = useState<'wired' | 'wireless' | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [wirelessSetupStatus, setWirelessSetupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [wirelessSetupStatus, setWirelessSetupStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
   const [dimAfterHours, setDimAfterHours] = useState<number>(0)
   const { theme, setTheme } = useTheme()
 
@@ -74,24 +76,19 @@ export function useAppLogic() {
 
   // Setup debug log listener
   useEffect(() => {
-    let unlistenFn: (() => void) | undefined
-
-    const setupListener = async () => {
-      try {
-        unlistenFn = await listen<string>('debug-log', (event) => {
-          if (event.payload) {
-            addLog(`[DEBUG] ${event.payload}`)
-          }
-        })
-      } catch (e) {
-        console.warn('Failed to setup debug listener (ignore if in browser)', e)
+    const unlistenPromise = listen<string>('debug-log', (event) => {
+      if (event.payload) {
+        addLog(`[DEBUG] ${event.payload}`)
       }
-    }
-
-    setupListener()
+    }).catch((e) => {
+      console.warn('Failed to setup debug listener (ignore if in browser)', e)
+      return () => {}
+    })
 
     return () => {
-      if (unlistenFn) unlistenFn()
+      unlistenPromise.then((unlistenFn) => {
+        if (unlistenFn) unlistenFn()
+      })
     }
   }, [addLog])
 
