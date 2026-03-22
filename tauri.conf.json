@@ -15,7 +15,8 @@
       "bin/adb"
     ],
     "resources": [
-      "bin/adb-NOTICE.txt"
+      "LICENSES/*",
+      "LICENSE"
     ],
     "icon": [
       "icons/32x32.png",

@@ -22,6 +22,10 @@ SOFTWARE.
 
 ---
 
-Third-Party Notices:
-This software bundles a binary of Android Debug Bridge (ADB) in the `bin/` directory.
-ADB is licensed under the Apache License 2.0. Please refer to `bin/adb-NOTICE.txt` for details.
+### Third-Party Software Notices
+
+This project bundles the following third-party components. For full license texts and notices, please refer to the `LICENSES/` directory.
+
+- **Android Debug Bridge (ADB)**
+  - License: Apache License 2.0 (See `LICENSES/LICENSE-ADB.txt`)
+  - Notices: See `LICENSES/NOTICE-ADB.txt`
