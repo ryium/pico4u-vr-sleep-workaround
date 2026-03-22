@@ -1,15 +1,17 @@
+use crate::config::{AppConfig, load_config, save_config};
 use crate::state::AppState;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_shell::ShellExt;
-use tokio::time::{interval, sleep, Duration};
-use crate::config::{load_config, save_config, AppConfig};
+use tokio::time::{Duration, interval, sleep};
 
 // Helper to run ADB command via Sidecar
 async fn run_adb_command(app: &AppHandle, args: &[String]) -> Result<String, String> {
-    let command = app.shell().sidecar("adb")
+    let command = app
+        .shell()
+        .sidecar("adb")
         .map_err(|e| format!("Sidecar configuration error: {}", e))?;
-    
+
     let output = command
         .args(args)
         .output()
@@ -21,9 +23,9 @@ async fn run_adb_command(app: &AppHandle, args: &[String]) -> Result<String, Str
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
         if stderr.is_empty() {
-             Ok(String::from_utf8_lossy(&output.stdout).to_string())
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
-             Err(stderr.to_string())
+            Err(stderr.to_string())
         }
     }
 }
@@ -41,7 +43,7 @@ pub async fn connect_device(app: AppHandle, ip: Option<String>) -> Result<String
         }
         None => vec!["devices".to_string()],
     };
-    
+
     run_adb_command(&app, &args).await
 }
 
@@ -57,13 +59,16 @@ pub async fn set_usb_mode(app: AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn get_device_ip(app: AppHandle) -> Result<String, String> {
-    let output = run_adb_command(&app, &vec![
-        "shell".to_string(),
-        "ip".to_string(),
-        "addr".to_string(),
-        "show".to_string(),
-        "wlan0".to_string(),
-    ])
+    let output = run_adb_command(
+        &app,
+        &vec![
+            "shell".to_string(),
+            "ip".to_string(),
+            "addr".to_string(),
+            "show".to_string(),
+            "wlan0".to_string(),
+        ],
+    )
     .await?;
 
     // Parse output for inet address
@@ -80,17 +85,20 @@ pub async fn get_device_ip(app: AppHandle) -> Result<String, String> {
             }
         }
     }
-    
+
     Err("Could not find IP address for wlan0. Ensure device is connected via USB.".to_string())
 }
 
 #[tauri::command]
 pub async fn get_device_model(app: AppHandle) -> Result<String, String> {
-    let output = run_adb_command(&app, &vec![
-        "shell".to_string(),
-        "getprop".to_string(),
-        "ro.product.model".to_string(),
-    ])
+    let output = run_adb_command(
+        &app,
+        &vec![
+            "shell".to_string(),
+            "getprop".to_string(),
+            "ro.product.model".to_string(),
+        ],
+    )
     .await?;
     Ok(output.trim().to_string())
 }
@@ -133,7 +141,8 @@ pub async fn start_keep_awake(
         }
 
         let spawn_adb = || -> Result<ChildGuard, String> {
-            let (_, child) = app_handle_task.shell()
+            let (_, child) = app_handle_task
+                .shell()
                 .sidecar("adb")
                 .map_err(|e| format!("Sidecar configuration error: {}", e))?
                 .args(["shell"])
@@ -144,26 +153,25 @@ pub async fn start_keep_awake(
 
         let mut opt_guard = spawn_adb().ok();
         let mut interval = interval(Duration::from_secs(3));
-        
+
         while is_running.load(Ordering::Relaxed) {
             interval.tick().await;
 
             if let Some(guard) = &mut opt_guard {
                 if let Err(e) = guard.0.as_mut().unwrap().write(b"input keyevent 224\n") {
                     if debug_mode.load(Ordering::Relaxed) {
-                        let _ = app_handle_task.emit("debug-log", format!("Error writing to adb shell: {}", e));
+                        let _ = app_handle_task
+                            .emit("debug-log", format!("Error writing to adb shell: {}", e));
                     }
                     #[cfg(debug_assertions)]
                     eprintln!("Failed to write to adb shell, restarting process: {}", e);
-                    
+
                     // Try to restart ADB
                     opt_guard = spawn_adb().ok();
                 } else if debug_mode.load(Ordering::Relaxed) {
                     let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
-                    let _ = app_handle_task.emit(
-                        "debug-log",
-                        format!("[{}] Sent keyevent 224 (常駐ADB)", timestamp),
-                    );
+                    let _ = app_handle_task
+                        .emit("debug-log", format!("[{}] Sent keyevent 224", timestamp));
                 }
             } else {
                 // If it was none, try to restart
@@ -183,7 +191,7 @@ pub async fn start_keep_awake(
         let hours = config.dim_delay_hours;
         let is_running_dim = state.is_running.clone();
         let app_handle_dim = app_handle.clone();
-        
+
         let dim_task = tokio::spawn(async move {
             let seconds = (hours * 3600.0) as u64;
             if seconds > 0 {
@@ -192,20 +200,27 @@ pub async fn start_keep_awake(
 
             // Only execute if still running
             if is_running_dim.load(Ordering::Relaxed) {
-                 let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
-                 let _ = app_handle_dim.emit("debug-log", format!("[{}] Executing auto-dim...", timestamp));
-                 
-                 let _ = run_adb_command(&app_handle_dim, &vec![
-                    "shell".to_string(),
-                    "settings".to_string(),
-                    "put".to_string(),
-                    "system".to_string(),
-                    "screen_brightness".to_string(),
-                    "1".to_string()
-                 ]).await;
+                let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+                let _ = app_handle_dim.emit(
+                    "debug-log",
+                    format!("[{}] Executing auto-dim...", timestamp),
+                );
+
+                let _ = run_adb_command(
+                    &app_handle_dim,
+                    &vec![
+                        "shell".to_string(),
+                        "settings".to_string(),
+                        "put".to_string(),
+                        "system".to_string(),
+                        "screen_brightness".to_string(),
+                        "1".to_string(),
+                    ],
+                )
+                .await;
             }
         });
-        
+
         if let Ok(mut lock) = state.dim_task.lock() {
             *lock = Some(dim_task);
         }
@@ -225,7 +240,7 @@ pub async fn stop_keep_awake(state: State<'_, AppState>) -> Result<(), String> {
             task.abort();
         }
     }
-    
+
     if let Ok(mut lock) = state.dim_task.lock() {
         if let Some(task) = lock.take() {
             task.abort();

@@ -13,14 +13,12 @@ use tauri_plugin_shell::ShellExt;
 
 fn main() {
     let state = AppState::default();
-    
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
         .manage(state)
-        .setup(|_app| {
-            Ok(())
-        })
+        .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![
             connect_device,
             enable_tcpip,

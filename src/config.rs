@@ -20,7 +20,10 @@ impl Default for AppConfig {
 }
 
 fn get_config_path(app: &AppHandle) -> Option<PathBuf> {
-    app.path().app_config_dir().ok().map(|p| p.join("pico4u_config.json"))
+    app.path()
+        .app_config_dir()
+        .ok()
+        .map(|p| p.join("pico4u_config.json"))
 }
 
 pub fn load_config(app: &AppHandle) -> AppConfig {
