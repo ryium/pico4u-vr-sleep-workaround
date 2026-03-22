@@ -74,24 +74,19 @@ export function useAppLogic() {
 
   // Setup debug log listener
   useEffect(() => {
-    let unlistenFn: (() => void) | undefined
-
-    const setupListener = async () => {
-      try {
-        unlistenFn = await listen<string>('debug-log', (event) => {
-          if (event.payload) {
-            addLog(`[DEBUG] ${event.payload}`)
-          }
-        })
-      } catch (e) {
-        console.warn('Failed to setup debug listener (ignore if in browser)', e)
+    const unlistenPromise = listen<string>('debug-log', (event) => {
+      if (event.payload) {
+        addLog(`[DEBUG] ${event.payload}`)
       }
-    }
-
-    setupListener()
+    }).catch((e) => {
+      console.warn('Failed to setup debug listener (ignore if in browser)', e)
+      return () => {}
+    })
 
     return () => {
-      if (unlistenFn) unlistenFn()
+      unlistenPromise.then((unlistenFn) => {
+        if (unlistenFn) unlistenFn()
+      })
     }
   }, [addLog])
 
