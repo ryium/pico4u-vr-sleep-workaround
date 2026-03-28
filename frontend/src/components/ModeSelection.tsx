@@ -15,7 +15,7 @@ export function ModeSelection({ homeView, setHomeView, setCheckingMode }: ModeSe
   return (
     <div className='flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100'>
       {/* Header */}
-      <header className='px-5 pt-3 pb-1 shrink-0'>
+      <header className='px-5 pt-4 pb-2 shrink-0'>
         <div className='flex items-baseline gap-2'>
           <h1 className='text-lg font-bold leading-normal'>{t('title')}</h1>
           <span className='text-xs text-gray-400 dark:text-gray-500 font-mono font-medium'>

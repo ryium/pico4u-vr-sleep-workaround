@@ -135,20 +135,18 @@ export function MainView() {
 
   return (
     <div className='flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100'>
-      <header className='px-5 pt-4 pb-2 shrink-0 flex items-center justify-between'>
-        <div>
-          <div className='flex items-baseline gap-2'>
-            <h1 className='text-lg font-bold leading-normal'>{t('title')}</h1>
-            <span className='text-xs text-gray-400 dark:text-gray-500 font-mono font-medium'>
-              v{packageJson.version}
-              {import.meta.env.DEV ? '-dev' : ''}
-            </span>
-          </div>
-          <p className='mt-0.5 text-gray-500 dark:text-gray-400 text-xs'>{t('subtitle')}</p>
+      <header className='px-5 pt-4 pb-2 shrink-0 relative'>
+        <div className='flex items-baseline gap-2'>
+          <h1 className='text-lg font-bold leading-normal'>{t('title')}</h1>
+          <span className='text-xs text-gray-400 dark:text-gray-500 font-mono font-medium'>
+            v{packageJson.version}
+            {import.meta.env.DEV ? '-dev' : ''}
+          </span>
         </div>
+        <p className='mt-0.5 text-gray-500 dark:text-gray-400 text-xs'>{t('subtitle')}</p>
         <button
           onClick={handleBackToModeSelect}
-          className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800'
+          className='absolute right-5 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800'
           title={t('back_to_mode_select')}
         >
           <Icon name='24/Close' />
