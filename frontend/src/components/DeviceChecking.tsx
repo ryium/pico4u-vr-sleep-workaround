@@ -28,6 +28,7 @@ export function DeviceChecking({
           <h1 className='text-lg font-bold leading-normal'>{t('title')}</h1>
           <span className='text-xs text-gray-400 dark:text-gray-500 font-mono font-medium'>
             v{packageJson.version}
+            {import.meta.env.DEV ? '-dev' : ''}
           </span>
         </div>
         <p className='mt-0.5 text-gray-500 dark:text-gray-400 text-xs'>{t('subtitle')}</p>
