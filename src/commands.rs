@@ -113,69 +113,75 @@ pub async fn set_debug_mode(state: State<'_, AppState>, enabled: bool) -> Result
 pub async fn start_keep_awake(
     app_handle: tauri::AppHandle,
     state: State<'_, AppState>,
-    mode: String,
+    _mode: String,
 ) -> Result<(), String> {
     if state.is_running.swap(true, Ordering::SeqCst) {
         return Err("Keep awake task is already running.".to_string());
     }
 
-    // If wired mode, restart ADB server to clear old TCP states
-    if mode == "wired" {
-        let _ = run_adb_command(&app_handle, &vec!["kill-server".to_string()]).await;
-    }
-
     let is_running = state.is_running.clone();
     let debug_mode = state.debug_mode.clone();
     let app_handle_task = app_handle.clone();
+    let config = load_config(&app_handle);
+    let interval_secs = config.keep_awake_interval_secs;
 
     // Main Keep-Awake Task
     let task = tokio::spawn(async move {
-        // Drop時に確実にプロセスを終了させるラッパー
-        struct ChildGuard(Option<tauri_plugin_shell::process::CommandChild>);
-        impl Drop for ChildGuard {
-            fn drop(&mut self) {
-                if let Some(child) = self.0.take() {
-                    let _ = child.kill();
-                }
-            }
-        }
-
-        let spawn_adb = || -> Result<ChildGuard, String> {
-            let (_, child) = app_handle_task
-                .shell()
-                .sidecar("adb")
-                .map_err(|e| format!("Sidecar configuration error: {}", e))?
-                .args(["shell"])
-                .spawn()
-                .map_err(|e| format!("Failed to spawn adb shell: {}", e))?;
-            Ok(ChildGuard(Some(child)))
-        };
-
-        let mut opt_guard = spawn_adb().ok();
-        let mut interval = interval(Duration::from_secs(3));
+        let mut interval = interval(Duration::from_secs(interval_secs));
 
         while is_running.load(Ordering::Relaxed) {
             interval.tick().await;
 
-            if let Some(guard) = &mut opt_guard {
-                if let Err(e) = guard.0.as_mut().unwrap().write(b"input keyevent 224\n") {
-                    if debug_mode.load(Ordering::Relaxed) {
-                        let _ = app_handle_task
-                            .emit("debug-log", format!("Error writing to adb shell: {}", e));
-                    }
-                    #[cfg(debug_assertions)]
-                    eprintln!("Failed to write to adb shell, restarting process: {}", e);
+            // Check device status first (optional but safer)
+            let status_output = run_adb_command(
+                &app_handle_task,
+                &vec![
+                    "shell".to_string(),
+                    "dumpsys".to_string(),
+                    "power".to_string(),
+                ],
+            )
+            .await;
 
-                    // Try to restart ADB
-                    opt_guard = spawn_adb().ok();
-                } else if debug_mode.load(Ordering::Relaxed) {
-                    let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
-                    let _ = app_handle_task
-                        .emit("debug-log", format!("[{}] Sent keyevent 224", timestamp));
+            let should_wake = match status_output {
+                Ok(output) => {
+                    // Look for mWakefulness=Awake
+                    !output.contains("mWakefulness=Awake")
                 }
-            } else {
-                // If it was none, try to restart
-                opt_guard = spawn_adb().ok();
+                Err(_) => true, // If check fails, try to wake up anyway
+            };
+
+            if should_wake {
+                let res = run_adb_command(
+                    &app_handle_task,
+                    &vec![
+                        "shell".to_string(),
+                        "input".to_string(),
+                        "keyevent".to_string(),
+                        "224".to_string(),
+                    ],
+                )
+                .await;
+
+                if debug_mode.load(Ordering::Relaxed) {
+                    let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+                    match res {
+                        Ok(_) => {
+                            let _ = app_handle_task
+                                .emit("debug-log", format!("[{}] Sent wakeup event", timestamp));
+                        }
+                        Err(e) => {
+                            let _ = app_handle_task
+                                .emit("debug-log", format!("[{}] Wakeup error: {}", timestamp, e));
+                        }
+                    }
+                }
+            } else if debug_mode.load(Ordering::Relaxed) {
+                let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+                let _ = app_handle_task.emit(
+                    "debug-log",
+                    format!("[{}] Device is already awake, skipping", timestamp),
+                );
             }
         }
     });

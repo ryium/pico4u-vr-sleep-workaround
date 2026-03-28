@@ -9,6 +9,8 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     changeLanguage,
     dimAfterHours,
     updateDimDelay,
+    keepAwakeInterval,
+    updateKeepAwakeInterval,
     isDebug,
     toggleDebugMode,
     theme,
@@ -18,12 +20,14 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   const [pendingLanguage, setPendingLanguage] = useState(i18n.language)
   const [pendingTheme, setPendingTheme] = useState(theme)
   const [pendingDimAfterHours, setPendingDimAfterHours] = useState(dimAfterHours)
+  const [pendingInterval, setPendingInterval] = useState(keepAwakeInterval)
 
   useEffect(() => {
     setPendingLanguage(i18n.language)
     setPendingTheme(theme)
     setPendingDimAfterHours(dimAfterHours)
-  }, [i18n.language, theme, dimAfterHours])
+    setPendingInterval(keepAwakeInterval)
+  }, [i18n.language, theme, dimAfterHours, keepAwakeInterval])
 
   const handleApply = async () => {
     if (pendingLanguage !== i18n.language) {
@@ -34,6 +38,9 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     }
     if (pendingDimAfterHours !== dimAfterHours) {
       await updateDimDelay(pendingDimAfterHours)
+    }
+    if (pendingInterval !== keepAwakeInterval) {
+      await updateKeepAwakeInterval(pendingInterval)
     }
     onClose?.()
   }
@@ -78,6 +85,18 @@ export function Settings({ onClose }: { onClose?: () => void }) {
           value={String(pendingDimAfterHours)}
           onChange={(val) => setPendingDimAfterHours(Number(val))}
           assistiveText={t('dim_setting_note')}
+          className='w-full text-left'
+          showLabel
+        />
+      </div>
+
+      <div>
+        <TextField
+          label={t('keep_awake_interval_label')}
+          type='number'
+          value={String(pendingInterval)}
+          onChange={(val) => setPendingInterval(Number(val))}
+          assistiveText={t('keep_awake_interval_note')}
           className='w-full text-left'
           showLabel
         />
