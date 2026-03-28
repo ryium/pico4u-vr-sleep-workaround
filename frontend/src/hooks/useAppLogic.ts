@@ -28,7 +28,9 @@ export function useAppLogic() {
 
   // Load config on mount
   useEffect(() => {
-    invoke<{ dim_delay_hours: number; ip_address: string; keep_awake_interval_secs: number }>('get_config')
+    invoke<{ dim_delay_hours: number; ip_address: string; keep_awake_interval_secs: number }>(
+      'get_config',
+    )
       .then((config) => {
         setDimAfterHours(config.dim_delay_hours)
         setKeepAwakeInterval(config.keep_awake_interval_secs)
@@ -40,7 +42,11 @@ export function useAppLogic() {
   }, [])
 
   const updateConfig = useCallback(
-    async (newConfig: { dim_delay_hours?: number; ip_address?: string; keep_awake_interval_secs?: number }) => {
+    async (newConfig: {
+      dim_delay_hours?: number
+      ip_address?: string
+      keep_awake_interval_secs?: number
+    }) => {
       try {
         const configToSave = {
           dim_delay_hours: newConfig.dim_delay_hours ?? dimAfterHours,

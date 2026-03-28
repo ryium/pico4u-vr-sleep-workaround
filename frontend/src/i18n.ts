@@ -77,7 +77,8 @@ const resources = {
       dim_setting_placeholder: '0 to disable',
       dim_setting_note: 'Applies when Keep-Alive starts.',
       keep_awake_interval_label: 'Keep-Alive Interval (seconds):',
-      keep_awake_interval_note: 'Lower values are more reliable but may interfere with other apps like PICO Connect.',
+      keep_awake_interval_note:
+        'Lower values are more reliable but may interfere with other apps like PICO Connect.',
     },
   },
   ja: {
@@ -155,7 +156,8 @@ const resources = {
       dim_setting_placeholder: '0で無効化',
       dim_setting_note: 'Keep-Alive開始時に適用されます。',
       keep_awake_interval_label: 'Keep-Alive 間隔 (秒):',
-      keep_awake_interval_note: '値が小さいほど確実ですが、PICO Connectなどの他アプリと干渉する可能性があります。',
+      keep_awake_interval_note:
+        '値が小さいほど確実ですが、PICO Connectなどの他アプリと干渉する可能性があります。',
     },
   },
 }
