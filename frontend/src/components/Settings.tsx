@@ -1,4 +1,4 @@
-import { Button, TextField, DropdownSelector, DropdownMenuItem } from '@charcoal-ui/react'
+import { Button, TextField, DropdownSelector, DropdownMenuItem, Checkbox } from '@charcoal-ui/react'
 import { useState, useEffect } from 'react'
 import { useAppContext } from '../context/AppContext'
 
@@ -9,6 +9,8 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     changeLanguage,
     dimAfterHours,
     updateDimDelay,
+    keepAwakeInterval,
+    updateKeepAwakeInterval,
     isDebug,
     toggleDebugMode,
     theme,
@@ -18,12 +20,14 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   const [pendingLanguage, setPendingLanguage] = useState(i18n.language)
   const [pendingTheme, setPendingTheme] = useState(theme)
   const [pendingDimAfterHours, setPendingDimAfterHours] = useState(dimAfterHours)
+  const [pendingInterval, setPendingInterval] = useState(keepAwakeInterval)
 
   useEffect(() => {
     setPendingLanguage(i18n.language)
     setPendingTheme(theme)
     setPendingDimAfterHours(dimAfterHours)
-  }, [i18n.language, theme, dimAfterHours])
+    setPendingInterval(keepAwakeInterval)
+  }, [i18n.language, theme, dimAfterHours, keepAwakeInterval])
 
   const handleApply = async () => {
     if (pendingLanguage !== i18n.language) {
@@ -35,6 +39,9 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     if (pendingDimAfterHours !== dimAfterHours) {
       await updateDimDelay(pendingDimAfterHours)
     }
+    if (pendingInterval !== keepAwakeInterval) {
+      await updateKeepAwakeInterval(pendingInterval)
+    }
     onClose?.()
   }
 
@@ -43,68 +50,74 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <div className='flex flex-col gap-6'>
-      <div>
-        <DropdownSelector
-          label={t('language_label')}
-          value={pendingLanguage}
-          onChange={(val) => setPendingLanguage(val)}
-          className='w-full'
-          showLabel
-        >
-          <DropdownMenuItem value='ja'>日本語</DropdownMenuItem>
-          <DropdownMenuItem value='en'>English</DropdownMenuItem>
-        </DropdownSelector>
+    <div className='flex flex-col h-full w-full'>
+      <div className='flex-1 overflow-y-auto px-5 custom-scrollbar'>
+        <div className='flex flex-col gap-8 pb-8 pt-2'>
+          <div>
+            <DropdownSelector
+              label={t('language_label')}
+              value={pendingLanguage}
+              onChange={(val) => setPendingLanguage(val)}
+              className='w-full'
+              showLabel
+            >
+              <DropdownMenuItem value='ja'>日本語</DropdownMenuItem>
+              <DropdownMenuItem value='en'>English</DropdownMenuItem>
+            </DropdownSelector>
+          </div>
+
+          <div>
+            <DropdownSelector
+              label={t('theme_label')}
+              value={pendingTheme}
+              onChange={(val) => setPendingTheme(val as any)}
+              className='w-full'
+              showLabel
+            >
+              <DropdownMenuItem value='light'>{t('theme_light')}</DropdownMenuItem>
+              <DropdownMenuItem value='dark'>{t('theme_dark')}</DropdownMenuItem>
+              <DropdownMenuItem value='system'>{t('theme_system')}</DropdownMenuItem>
+            </DropdownSelector>
+          </div>
+
+          <div>
+            <TextField
+              label={t('dim_setting_label')}
+              type='number'
+              value={String(pendingDimAfterHours)}
+              onChange={(val) => setPendingDimAfterHours(Number(val))}
+              assistiveText={t('dim_setting_note')}
+              className='w-full text-left'
+              showLabel
+            />
+          </div>
+
+          <div>
+            <TextField
+              label={t('keep_awake_interval_label')}
+              type='number'
+              value={String(pendingInterval)}
+              onChange={(val) => setPendingInterval(Number(val))}
+              assistiveText={t('keep_awake_interval_note')}
+              className='w-full text-left'
+              showLabel
+            />
+          </div>
+
+          <div className='mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100'>
+            <Checkbox checked={isDebug} onChange={toggleDebugMode}>
+              {t('debug_mode')}
+            </Checkbox>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <DropdownSelector
-          label={t('theme_label')}
-          value={pendingTheme}
-          onChange={(val) => setPendingTheme(val as any)}
-          className='w-full'
-          showLabel
-        >
-          <DropdownMenuItem value='light'>{t('theme_light')}</DropdownMenuItem>
-          <DropdownMenuItem value='dark'>{t('theme_dark')}</DropdownMenuItem>
-          <DropdownMenuItem value='system'>{t('theme_system')}</DropdownMenuItem>
-        </DropdownSelector>
-      </div>
-
-      <div>
-        <TextField
-          label={t('dim_setting_label')}
-          type='number'
-          value={String(pendingDimAfterHours)}
-          onChange={(val) => setPendingDimAfterHours(Number(val))}
-          assistiveText={t('dim_setting_note')}
-          className='w-full text-left'
-          showLabel
-        />
-      </div>
-
-      <div className='flex items-center gap-2 mt-2'>
-        <input
-          type='checkbox'
-          id='debug-mode'
-          checked={isDebug}
-          onChange={toggleDebugMode}
-          className='rounded text-brand focus:ring-brand bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-4 h-4 cursor-pointer'
-        />
-        <label
-          htmlFor='debug-mode'
-          className='text-sm font-bold text-gray-900 dark:text-gray-100 cursor-pointer'
-        >
-          {t('debug_mode', { defaultValue: 'Debug Mode' })}
-        </label>
-      </div>
-
-      <div className='mt-3 flex flex-col gap-3'>
+      <div className='shrink-0 px-5 pt-4 pb-6 flex flex-col gap-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'>
         <Button onClick={handleApply} variant='Primary' fullWidth>
-          {t('btn_apply_changes', { defaultValue: 'Apply Changes' })}
+          {t('btn_apply_changes')}
         </Button>
         <Button onClick={handleCancel} variant='Default' fullWidth>
-          {t('cancel', { defaultValue: 'Cancel' })}
+          {t('cancel')}
         </Button>
       </div>
     </div>

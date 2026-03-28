@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager};
 pub struct AppConfig {
     pub dim_delay_hours: f64,
     pub ip_address: String,
+    pub keep_awake_interval_secs: u64,
 }
 
 impl Default for AppConfig {
@@ -15,6 +16,7 @@ impl Default for AppConfig {
         Self {
             dim_delay_hours: 1.0,
             ip_address: String::new(),
+            keep_awake_interval_secs: 3,
         }
     }
 }

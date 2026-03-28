@@ -19,14 +19,21 @@ export function useAppLogic() {
   const [wirelessSetupStatus, setWirelessSetupStatus] = useState<
     'idle' | 'loading' | 'success' | 'error'
   >('idle')
+  const [wiredSetupStatus, setWiredSetupStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
   const [dimAfterHours, setDimAfterHours] = useState<number>(0)
+  const [keepAwakeInterval, setKeepAwakeInterval] = useState<number>(3)
   const { theme, setTheme } = useTheme()
 
   // Load config on mount
   useEffect(() => {
-    invoke<{ dim_delay_hours: number; ip_address: string }>('get_config')
+    invoke<{ dim_delay_hours: number; ip_address: string; keep_awake_interval_secs: number }>(
+      'get_config',
+    )
       .then((config) => {
         setDimAfterHours(config.dim_delay_hours)
+        setKeepAwakeInterval(config.keep_awake_interval_secs)
         if (config.ip_address) {
           setDeviceIp(config.ip_address)
         }
@@ -35,18 +42,23 @@ export function useAppLogic() {
   }, [])
 
   const updateConfig = useCallback(
-    async (newConfig: { dim_delay_hours?: number; ip_address?: string }) => {
+    async (newConfig: {
+      dim_delay_hours?: number
+      ip_address?: string
+      keep_awake_interval_secs?: number
+    }) => {
       try {
         const configToSave = {
           dim_delay_hours: newConfig.dim_delay_hours ?? dimAfterHours,
           ip_address: newConfig.ip_address ?? deviceIp,
+          keep_awake_interval_secs: newConfig.keep_awake_interval_secs ?? keepAwakeInterval,
         }
         await invoke('save_config_cmd', { config: configToSave })
       } catch (e) {
         console.error('Failed to save config:', e)
       }
     },
-    [dimAfterHours, deviceIp],
+    [dimAfterHours, deviceIp, keepAwakeInterval],
   )
 
   const updateDimDelay = useCallback(
@@ -54,6 +66,15 @@ export function useAppLogic() {
       const val = Math.max(0, hours)
       setDimAfterHours(val)
       await updateConfig({ dim_delay_hours: val })
+    },
+    [updateConfig],
+  )
+
+  const updateKeepAwakeInterval = useCallback(
+    async (secs: number) => {
+      const val = Math.max(1, secs)
+      setKeepAwakeInterval(val)
+      await updateConfig({ keep_awake_interval_secs: val })
     },
     [updateConfig],
   )
@@ -101,6 +122,7 @@ export function useAppLogic() {
 
   const checkDevices = useCallback(async () => {
     try {
+      setWiredSetupStatus('loading')
       addLog(t('log_checking_devices'))
       const res = await invoke<string>('check_connection')
 
@@ -110,15 +132,16 @@ export function useAppLogic() {
 
       const connected = res.includes('device') && !res.trim().endsWith('List of devices attached')
       setIsConnected(connected)
+      setWiredSetupStatus(connected ? 'success' : 'error')
     } catch (e) {
       addLog(t('error_prefix', { error: e }))
       setIsConnected(false)
+      setWiredSetupStatus('error')
     }
   }, [t, addLog])
 
   const toggleDebugMode = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const enabled = e.target.checked
+    async (enabled: boolean) => {
       setIsDebug(enabled)
       try {
         await invoke('set_debug_mode', { enabled })
@@ -220,7 +243,7 @@ export function useAppLogic() {
       } else {
         await invoke('start_keep_awake', { mode: connectionMode })
         setIsRunning(true)
-        addLog(t('log_started_loop'))
+        addLog(t('log_started_loop', { interval: keepAwakeInterval }))
       }
     } catch (e) {
       addLog(t('error_prefix', { error: e }))
@@ -252,11 +275,14 @@ export function useAppLogic() {
     checkDevices,
     setupWireless,
     wirelessSetupStatus,
+    wiredSetupStatus,
     connectManual,
     toggleKeepAwake,
     getDeviceModel,
     dimAfterHours,
     updateDimDelay,
+    keepAwakeInterval,
+    updateKeepAwakeInterval,
     theme,
     setTheme,
   }
