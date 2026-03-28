@@ -44,19 +44,21 @@ export function DeviceChecking({
               className='max-w-full h-auto mx-auto rounded-lg dark:opacity-90'
             />
             {!detectedModel && (
-              <div className='animate-pulse text-gray-400 text-sm'>Waiting...</div>
+              <div className='animate-pulse text-gray-400 text-sm'>
+                {t('device_checking_waiting')}
+              </div>
             )}
             <div className='flex flex-col gap-3 mt-2 items-center'>
               {detectedModel && (
                 <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Detected: {detectedModel}
+                  {t('device_checking_detected', { model: detectedModel })}
                 </p>
               )}
               <Button onClick={() => onSelectMode(checkingMode)} variant='Overlay'>
-                {t('force_proceed', { defaultValue: 'Proceed Anyway' })}
+                {t('force_proceed')}
               </Button>
               <Button onClick={handleCancel} variant='Default'>
-                {t('cancel', { defaultValue: 'Cancel' })}
+                {t('cancel')}
               </Button>
             </div>
           </div>

@@ -25,9 +25,7 @@ export function ConnectionPanel() {
           <div className='flex items-center gap-2'>
             <span className='w-2 h-2 rounded-full bg-brand shrink-0' />
             <span className='font-semibold text-sm text-gray-800 dark:text-gray-200'>
-              {connectionMode === 'wired'
-                ? t('mode_wired', { defaultValue: 'Wired' })
-                : t('mode_wireless', { defaultValue: 'Wireless' })}
+              {connectionMode === 'wired' ? t('mode_wired') : t('mode_wireless')}
             </span>
           </div>
           {deviceIp && (

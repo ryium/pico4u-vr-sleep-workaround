@@ -141,8 +141,7 @@ export function useAppLogic() {
   }, [t, addLog])
 
   const toggleDebugMode = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const enabled = e.target.checked
+    async (enabled: boolean) => {
       setIsDebug(enabled)
       try {
         await invoke('set_debug_mode', { enabled })

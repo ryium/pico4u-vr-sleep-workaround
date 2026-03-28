@@ -49,7 +49,7 @@ export function MainView() {
 
     const check = async () => {
       if (!checkingMode) return
-      setStatus(t('status_checking', { defaultValue: 'Checking for device...' }))
+      setStatus(t('status_checking'))
       const model = await getDeviceModel()
       if (!isMounted.current) return
 
@@ -61,17 +61,12 @@ export function MainView() {
           setStatus(
             t('status_wrong_device', {
               model,
-              defaultValue: `Detected: ${model}. Waiting for Pico 4 Ultra...`,
             }),
           )
         }
       } else {
         setDetectedModel(null)
-        setStatus(
-          t('status_waiting_usb', {
-            defaultValue: 'Please connect your Pico 4 Ultra via USB.',
-          }),
-        )
+        setStatus(t('status_waiting_usb'))
       }
     }
 
@@ -132,9 +127,9 @@ export function MainView() {
     ? [
         {
           key: 'connection',
-          label: t('tab_connection', { defaultValue: '接続' }),
+          label: t('tab_connection'),
         },
-        { key: 'logs', label: t('tab_logs', { defaultValue: 'ログ' }) },
+        { key: 'logs', label: t('tab_logs') },
       ]
     : []
 
@@ -154,7 +149,7 @@ export function MainView() {
         <button
           onClick={handleBackToModeSelect}
           className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800'
-          title={t('back_to_mode_select', { defaultValue: 'モード選択に戻る' })}
+          title={t('back_to_mode_select')}
         >
           <Icon name='24/Close' />
         </button>
@@ -179,9 +174,7 @@ export function MainView() {
               isRunning ? 'text-brand' : 'text-gray-400 dark:text-gray-500'
             }`}
           >
-            {isRunning
-              ? t('status_running', { defaultValue: 'RUNNING' })
-              : t('status_stopped', { defaultValue: 'STOPPED' })}
+            {isRunning ? t('status_running') : t('status_stopped')}
           </h2>
         </div>
 

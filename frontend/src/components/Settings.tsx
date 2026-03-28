@@ -1,4 +1,4 @@
-import { Button, TextField, DropdownSelector, DropdownMenuItem } from '@charcoal-ui/react'
+import { Button, TextField, DropdownSelector, DropdownMenuItem, Checkbox } from '@charcoal-ui/react'
 import { useState, useEffect } from 'react'
 import { useAppContext } from '../context/AppContext'
 
@@ -50,7 +50,7 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className='flex flex-col gap-4'>
       <div>
         <DropdownSelector
           label={t('language_label')}
@@ -102,28 +102,21 @@ export function Settings({ onClose }: { onClose?: () => void }) {
         />
       </div>
 
-      <div className='flex items-center gap-2 mt-2'>
-        <input
-          type='checkbox'
-          id='debug-mode'
+      <div className='mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100'>
+        <Checkbox
           checked={isDebug}
           onChange={toggleDebugMode}
-          className='rounded text-brand focus:ring-brand bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-4 h-4 cursor-pointer'
-        />
-        <label
-          htmlFor='debug-mode'
-          className='text-sm font-bold text-gray-900 dark:text-gray-100 cursor-pointer'
         >
-          {t('debug_mode', { defaultValue: 'Debug Mode' })}
-        </label>
+          {t('debug_mode')}
+        </Checkbox>
       </div>
 
-      <div className='mt-3 flex flex-col gap-3'>
+      <div className='mt-1 flex flex-col gap-3'>
         <Button onClick={handleApply} variant='Primary' fullWidth>
-          {t('btn_apply_changes', { defaultValue: 'Apply Changes' })}
+          {t('btn_apply_changes')}
         </Button>
         <Button onClick={handleCancel} variant='Default' fullWidth>
-          {t('cancel', { defaultValue: 'Cancel' })}
+          {t('cancel')}
         </Button>
       </div>
     </div>
