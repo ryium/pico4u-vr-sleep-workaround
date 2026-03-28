@@ -60,12 +60,12 @@ export function ModeSelection({ homeView, setHomeView, setCheckingMode }: ModeSe
       ) : (
         <>
           {/* Inline settings on home */}
-          <div className='flex items-center justify-between px-5 py-1 shrink-0'>
-            <h2 className='text-base font-bold text-gray-900 dark:text-gray-100'>
+          <div className='flex items-center justify-center px-5 py-3 shrink-0'>
+            <h2 className='text-lg font-bold text-gray-900 dark:text-gray-100'>
               {t('settings_title')}
             </h2>
           </div>
-          <div className='flex-1 overflow-y-auto px-5 pb-2'>
+          <div className='flex-1 flex flex-col min-h-0 relative'>
             <Settings onClose={() => setHomeView('main')} />
           </div>
         </>

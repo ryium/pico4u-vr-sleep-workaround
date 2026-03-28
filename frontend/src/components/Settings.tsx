@@ -50,8 +50,10 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <div className='flex flex-col gap-4'>
-      <div>
+    <div className='flex flex-col h-full w-full'>
+      <div className='flex-1 overflow-y-auto px-5 custom-scrollbar'>
+        <div className='flex flex-col gap-8 pb-8 pt-2'>
+          <div>
         <DropdownSelector
           label={t('language_label')}
           value={pendingLanguage}
@@ -111,7 +113,10 @@ export function Settings({ onClose }: { onClose?: () => void }) {
         </Checkbox>
       </div>
 
-      <div className='mt-1 flex flex-col gap-3'>
+        </div>
+      </div>
+
+      <div className='shrink-0 px-5 pt-4 pb-6 flex flex-col gap-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'>
         <Button onClick={handleApply} variant='Primary' fullWidth>
           {t('btn_apply_changes')}
         </Button>
