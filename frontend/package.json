@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "lint": "oxlint -c .oxlintrc.json src",
     "lint:fix": "oxlint -c .oxlintrc.json --fix src",
-    "format": "oxfmt src"
+    "format": "oxfmt src",
+    "format:check": "oxfmt --check src"
   },
   "dependencies": {
     "@charcoal-ui/foundation": "^5.4.4",
