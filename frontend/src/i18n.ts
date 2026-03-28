@@ -82,7 +82,7 @@ const resources = {
       dim_setting_note: 'Takes effect when sleep prevention starts',
       keep_awake_interval_label: 'Wake signal interval (seconds):',
       keep_awake_interval_note:
-        'Shorter intervals are more reliable, but may interfere with apps like PICO Connect. Longer intervals risk the headset resetting its floor level',
+        'The lower the value, the less likely the screen is to dim; however, if the value is too high, the floor level may be reset',
       back_to_mode_select: 'Back to mode selection',
       tab_connection: 'Connection',
       tab_logs: 'Logs',
@@ -167,7 +167,7 @@ const resources = {
       dim_setting_note: 'スリープ回避の開始時に適用',
       keep_awake_interval_label: '信号の送信間隔（秒）:',
       keep_awake_interval_note:
-        '値が小さいほど安定しますが、PICO Connect等に影響する場合があります。大きすぎると床レベルがリセットされる可能性があります',
+        '値が小さいほど画面が暗転しにくくなりますが、大きすぎるとフロアレベルがリセットされる可能性があります',
       back_to_mode_select: 'モード選択に戻る',
       tab_connection: '接続',
       tab_logs: 'ログ',
