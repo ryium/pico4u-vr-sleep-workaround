@@ -54,65 +54,61 @@ export function Settings({ onClose }: { onClose?: () => void }) {
       <div className='flex-1 overflow-y-auto px-5 custom-scrollbar'>
         <div className='flex flex-col gap-8 pb-8 pt-2'>
           <div>
-        <DropdownSelector
-          label={t('language_label')}
-          value={pendingLanguage}
-          onChange={(val) => setPendingLanguage(val)}
-          className='w-full'
-          showLabel
-        >
-          <DropdownMenuItem value='ja'>日本語</DropdownMenuItem>
-          <DropdownMenuItem value='en'>English</DropdownMenuItem>
-        </DropdownSelector>
-      </div>
+            <DropdownSelector
+              label={t('language_label')}
+              value={pendingLanguage}
+              onChange={(val) => setPendingLanguage(val)}
+              className='w-full'
+              showLabel
+            >
+              <DropdownMenuItem value='ja'>日本語</DropdownMenuItem>
+              <DropdownMenuItem value='en'>English</DropdownMenuItem>
+            </DropdownSelector>
+          </div>
 
-      <div>
-        <DropdownSelector
-          label={t('theme_label')}
-          value={pendingTheme}
-          onChange={(val) => setPendingTheme(val as any)}
-          className='w-full'
-          showLabel
-        >
-          <DropdownMenuItem value='light'>{t('theme_light')}</DropdownMenuItem>
-          <DropdownMenuItem value='dark'>{t('theme_dark')}</DropdownMenuItem>
-          <DropdownMenuItem value='system'>{t('theme_system')}</DropdownMenuItem>
-        </DropdownSelector>
-      </div>
+          <div>
+            <DropdownSelector
+              label={t('theme_label')}
+              value={pendingTheme}
+              onChange={(val) => setPendingTheme(val as any)}
+              className='w-full'
+              showLabel
+            >
+              <DropdownMenuItem value='light'>{t('theme_light')}</DropdownMenuItem>
+              <DropdownMenuItem value='dark'>{t('theme_dark')}</DropdownMenuItem>
+              <DropdownMenuItem value='system'>{t('theme_system')}</DropdownMenuItem>
+            </DropdownSelector>
+          </div>
 
-      <div>
-        <TextField
-          label={t('dim_setting_label')}
-          type='number'
-          value={String(pendingDimAfterHours)}
-          onChange={(val) => setPendingDimAfterHours(Number(val))}
-          assistiveText={t('dim_setting_note')}
-          className='w-full text-left'
-          showLabel
-        />
-      </div>
+          <div>
+            <TextField
+              label={t('dim_setting_label')}
+              type='number'
+              value={String(pendingDimAfterHours)}
+              onChange={(val) => setPendingDimAfterHours(Number(val))}
+              assistiveText={t('dim_setting_note')}
+              className='w-full text-left'
+              showLabel
+            />
+          </div>
 
-      <div>
-        <TextField
-          label={t('keep_awake_interval_label')}
-          type='number'
-          value={String(pendingInterval)}
-          onChange={(val) => setPendingInterval(Number(val))}
-          assistiveText={t('keep_awake_interval_note')}
-          className='w-full text-left'
-          showLabel
-        />
-      </div>
+          <div>
+            <TextField
+              label={t('keep_awake_interval_label')}
+              type='number'
+              value={String(pendingInterval)}
+              onChange={(val) => setPendingInterval(Number(val))}
+              assistiveText={t('keep_awake_interval_note')}
+              className='w-full text-left'
+              showLabel
+            />
+          </div>
 
-      <div className='mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100'>
-        <Checkbox
-          checked={isDebug}
-          onChange={toggleDebugMode}
-        >
-          {t('debug_mode')}
-        </Checkbox>
-      </div>
-
+          <div className='mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100'>
+            <Checkbox checked={isDebug} onChange={toggleDebugMode}>
+              {t('debug_mode')}
+            </Checkbox>
+          </div>
         </div>
       </div>
 
