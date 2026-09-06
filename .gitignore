@@ -11,3 +11,7 @@ node_modules
 # IDE settings
 .idea
 .vscode
+
+# Local agent notes and package-manager bootstrap
+.antigravitycli/
+.tools/
