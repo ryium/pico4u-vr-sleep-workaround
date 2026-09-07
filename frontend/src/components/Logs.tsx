@@ -1,17 +1,15 @@
 import { useAppContext } from '../context/AppContext'
-
 export function Logs() {
-  const { logs } = useAppContext()
-
+  const { t, logs } = useAppContext()
   return (
-    <div className='flex flex-col gap-3'>
-      <div className='bg-gray-900 dark:bg-black text-gray-200 p-4 rounded-lg h-[240px] overflow-y-auto font-mono text-xs leading-relaxed border border-gray-800 dark:border-gray-800'>
-        {logs.map((log, i) => (
-          <div key={i} className='mb-1 break-all'>
-            {log}
-          </div>
-        ))}
-        {logs.length === 0 && <div className='text-gray-500 italic'>No logs available.</div>}
+    <div className='panel-stack'>
+      <p className='hint'>{t('logs_note')}</p>
+      <div className='log-list' aria-label={t('tab_logs')}>
+        {logs.length ? (
+          logs.map((log, index) => <p key={index}>{log}</p>)
+        ) : (
+          <p className='hint'>{t('no_logs')}</p>
+        )}
       </div>
     </div>
   )
