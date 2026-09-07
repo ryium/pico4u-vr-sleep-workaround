@@ -6,50 +6,45 @@
 mod adb_client;
 mod commands;
 mod config;
+mod connection;
+mod runtime;
 mod state;
 
 use crate::commands::*;
+use crate::runtime::*;
 use crate::state::AppState;
-use std::sync::atomic::Ordering;
 use tauri::Manager;
-use tauri_plugin_shell::ShellExt;
 
 fn main() {
-    let state = AppState::default();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .manage(state)
-        .setup(|_app| Ok(()))
+        .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
-            connect_device,
-            enable_tcpip,
-            get_device_ip,
+            check_connection_status,
+            try_auto_connect,
+            setup_wireless,
             start_keep_awake,
             stop_keep_awake,
-            check_connection,
-            try_auto_connect,
-            kill_adb,
+            get_running,
             set_debug_mode,
-            set_usb_mode,
-            disconnect_all_wireless,
-            get_device_model,
             get_config,
             save_config_cmd
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| match event {
-            tauri::RunEvent::Exit => {
-                let state = app_handle.state::<AppState>();
-                if state.adb_started_by_us.load(Ordering::SeqCst) {
-                    if let Ok(sidecar) = app_handle.shell().sidecar("adb") {
-                        let _ = tauri::async_runtime::block_on(async {
-                            let _ = sidecar.args(["kill-server"]).output().await;
-                        });
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                let state = app.state::<AppState>();
+                for slot in [&state.keep_awake_task, &state.dim_task] {
+                    if let Some(task) = slot.lock().unwrap().take() {
+                        task.abort();
                     }
                 }
+                // Kill only the foreground server child created by this app.
+                // Never kill a shared server, or all processes named adb.exe.
+                if let Some(child) = state.adb_child.lock().unwrap().take() {
+                    let _ = child.kill();
+                }
             }
-            _ => {}
         });
 }

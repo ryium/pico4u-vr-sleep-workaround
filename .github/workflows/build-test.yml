@@ -35,6 +35,9 @@ jobs:
         run: .\scripts\setup_adb.ps1
 
       - name: bundle tauri app
+        run: cargo fmt --check && cargo test --locked && cargo clippy --locked -- -D warnings
+
+      - name: build installers
         run: pnpm tauri build --no-sign
 
       - name: verify bundled adb
