@@ -19,7 +19,6 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_process::init())
         .manage(state)
         .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![

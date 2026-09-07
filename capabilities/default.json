@@ -5,7 +5,6 @@
   "permissions": [
     "core:default",
     "shell:allow-execute",
-    "shell:default",
-    "process:default"
+    "shell:default"
   ]
 }
