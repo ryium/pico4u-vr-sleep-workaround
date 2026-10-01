@@ -5,18 +5,18 @@
   "author": "ryium",
   "license": "MIT",
   "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24 <27"
+  },
   "scripts": {
-    "postinstall": "pnpm -C frontend install",
+    "postinstall": "pnpm -C frontend install --frozen-lockfile",
     "dev": "tauri dev",
     "build": "tauri build",
     "tauri": "tauri",
     "version": "node scripts/sync-version.mjs && git add frontend/package.json Cargo.toml tauri.conf.json"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.9.6"
-  },
-  "dependencies": {
-    "@tauri-apps/plugin-process": "~2.3.1",
-    "@tauri-apps/plugin-shell": "~2.3.4"
+    "@tauri-apps/cli": "^2.11.4"
   }
 }

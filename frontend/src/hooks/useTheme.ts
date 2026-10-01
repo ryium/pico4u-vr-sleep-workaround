@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 
-type Theme = 'light' | 'dark' | 'system'
+export type Theme = 'light' | 'dark' | 'system'
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme') as Theme
-      return saved || 'system'
+      const saved = localStorage.getItem('theme')
+      return saved === 'light' || saved === 'dark' ? saved : 'system'
     }
     return 'system'
   })
@@ -17,6 +17,8 @@ export function useTheme() {
       theme === 'dark' ||
       (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 
+    root.dataset.theme = isDark ? 'dark' : 'light'
+    root.style.colorScheme = isDark ? 'dark' : 'light'
     if (isDark) {
       root.classList.add('dark')
     } else {

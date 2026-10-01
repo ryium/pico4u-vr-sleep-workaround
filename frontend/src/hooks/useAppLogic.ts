@@ -11,7 +11,10 @@ const invokeWithTimeout = async <T>(cmd: string, args: any, timeoutMs: number): 
   return Promise.race([
     invoke<T>(cmd, args),
     new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Command ${cmd} timed out after ${timeoutMs}ms`)), timeoutMs),
+      setTimeout(
+        () => reject(new Error(`Command ${cmd} timed out after ${timeoutMs}ms`)),
+        timeoutMs,
+      ),
     ),
   ])
 }

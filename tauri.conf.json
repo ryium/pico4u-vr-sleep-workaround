@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeDevCommand": "pnpm -C frontend dev",
-    "beforeBuildCommand": "pnpm -C frontend build",
+    "beforeDevCommand": "node scripts/frontend.mjs dev",
+    "beforeBuildCommand": "node scripts/frontend.mjs build",
     "frontendDist": "frontend/dist",
     "devUrl": "http://localhost:5173"
   },
