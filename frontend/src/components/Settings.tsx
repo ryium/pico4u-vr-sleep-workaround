@@ -1,118 +1,123 @@
-import { Button, TextField, DropdownSelector, DropdownMenuItem, Checkbox } from '@charcoal-ui/react'
 import { useState } from 'react'
+import { Button } from '@charcoal-ui/react'
 import { useAppContext } from '../context/AppContext'
+import type { AppConfig } from '../types'
+import type { Theme } from '../hooks/useTheme'
 
-export function Settings({ onClose }: { onClose?: () => void }) {
-  const {
-    t,
-    i18n,
-    changeLanguage,
-    dimAfterHours,
-    updateDimDelay,
-    keepAwakeInterval,
-    updateKeepAwakeInterval,
-    isDebug,
-    toggleDebugMode,
-    theme,
-    setTheme,
-  } = useAppContext()
-
-  const [pendingLanguage, setPendingLanguage] = useState(i18n.language)
-  const [pendingTheme, setPendingTheme] = useState(theme)
-  const [pendingDimAfterHours, setPendingDimAfterHours] = useState(dimAfterHours)
-  const [pendingInterval, setPendingInterval] = useState(keepAwakeInterval)
-
-  const handleApply = async () => {
-    if (pendingLanguage !== i18n.language) {
-      changeLanguage(pendingLanguage)
-    }
-    if (pendingTheme !== theme) {
-      setTheme(pendingTheme as any)
-    }
-    if (pendingDimAfterHours !== dimAfterHours) {
-      await updateDimDelay(pendingDimAfterHours)
-    }
-    if (pendingInterval !== keepAwakeInterval) {
-      await updateKeepAwakeInterval(pendingInterval)
-    }
-    onClose?.()
-  }
-
-  const handleCancel = () => {
-    onClose?.()
-  }
-
+export function Settings() {
+  const { t, i18n, changeLanguage, theme, setTheme, isDebug, toggleDebugMode, settings } =
+    useAppContext()
   return (
-    <div className='flex flex-col h-full w-full'>
-      <div className='flex-1 overflow-y-auto px-5 custom-scrollbar'>
-        <div className='flex flex-col gap-8 pb-8 pt-2'>
-          <div>
-            <DropdownSelector
-              label={t('language_label')}
-              value={pendingLanguage}
-              onChange={(val) => setPendingLanguage(val)}
-              className='w-full'
-              showLabel
-            >
-              <DropdownMenuItem value='ja'>日本語</DropdownMenuItem>
-              <DropdownMenuItem value='en'>English</DropdownMenuItem>
-            </DropdownSelector>
-          </div>
-
-          <div>
-            <DropdownSelector
-              label={t('theme_label')}
-              value={pendingTheme}
-              onChange={(val) => setPendingTheme(val as any)}
-              className='w-full'
-              showLabel
-            >
-              <DropdownMenuItem value='light'>{t('theme_light')}</DropdownMenuItem>
-              <DropdownMenuItem value='dark'>{t('theme_dark')}</DropdownMenuItem>
-              <DropdownMenuItem value='system'>{t('theme_system')}</DropdownMenuItem>
-            </DropdownSelector>
-          </div>
-
-          <div>
-            <TextField
-              label={t('dim_setting_label')}
-              type='number'
-              value={String(pendingDimAfterHours)}
-              onChange={(val) => setPendingDimAfterHours(Number(val))}
-              assistiveText={t('dim_setting_note')}
-              className='w-full text-left'
-              showLabel
-            />
-          </div>
-
-          <div>
-            <TextField
-              label={t('keep_awake_interval_label')}
-              type='number'
-              value={String(pendingInterval)}
-              onChange={(val) => setPendingInterval(Number(val))}
-              assistiveText={t('keep_awake_interval_note')}
-              className='w-full text-left'
-              showLabel
-            />
-          </div>
-
-          <div className='mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100'>
-            <Checkbox checked={isDebug} onChange={toggleDebugMode}>
-              {t('debug_mode')}
-            </Checkbox>
-          </div>
-        </div>
-      </div>
-
-      <div className='shrink-0 px-5 pt-4 pb-6 flex flex-col gap-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'>
-        <Button onClick={handleApply} variant='Primary' fullWidth>
-          {t('btn_apply_changes')}
-        </Button>
-        <Button onClick={handleCancel} variant='Default' fullWidth>
-          {t('cancel')}
-        </Button>
-      </div>
+    <div className='panel-stack settings-panel'>
+      <label className='field'>
+        {t('language_label')}
+        <select
+          aria-label={t('language_label')}
+          value={i18n.resolvedLanguage ?? 'en'}
+          onChange={(event) => changeLanguage(event.target.value)}
+        >
+          <option value='ja'>日本語</option>
+          <option value='en'>English</option>
+        </select>
+      </label>
+      <label className='field'>
+        {t('theme_label')}
+        <select
+          aria-label={t('theme_label')}
+          value={theme}
+          onChange={(event) => setTheme(event.target.value as Theme)}
+        >
+          {(['system', 'light', 'dark'] as const).map((value) => (
+            <option key={value} value={value}>
+              {t(`theme_${value}`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {settings.config ? (
+        <RuntimeSettings config={settings.config} />
+      ) : (
+        <p className='hint' role='status'>
+          {t(settings.error ? 'settings_failed' : 'loading_settings')}
+        </p>
+      )}
+      <label className='checkbox-field'>
+        <input
+          type='checkbox'
+          checked={isDebug}
+          onChange={(event) => void toggleDebugMode(event.target.checked)}
+        />
+        {t('debug_mode')}
+      </label>
     </div>
+  )
+}
+
+function RuntimeSettings({ config }: { config: AppConfig }) {
+  const { t, settings } = useAppContext()
+  const [hours, setHours] = useState(String(config.dim_delay_hours))
+  const [interval, setInterval] = useState(String(config.keep_awake_interval_secs))
+  const [saved, setSaved] = useState(false)
+  const [failed, setFailed] = useState(false)
+  return (
+    <form
+      className='panel-stack'
+      onSubmit={(event) => {
+        event.preventDefault()
+        setSaved(false)
+        setFailed(false)
+        void settings
+          .update({ dim_delay_hours: Number(hours), keep_awake_interval_secs: Number(interval) })
+          .then(() => setSaved(true))
+          .catch(() => setFailed(true))
+      }}
+    >
+      <label className='field'>
+        {t('interval_label')}
+        <input
+          type='number'
+          min='1'
+          max='3600'
+          step='1'
+          required
+          value={interval}
+          disabled={settings.isSaving}
+          onChange={(event) => {
+            setInterval(event.target.value)
+            setSaved(false)
+          }}
+        />
+      </label>
+      <label className='field'>
+        {t('dim_label')}
+        <input
+          type='number'
+          min='0'
+          max='168'
+          step='0.25'
+          required
+          value={hours}
+          disabled={settings.isSaving}
+          onChange={(event) => {
+            setHours(event.target.value)
+            setSaved(false)
+          }}
+        />
+      </label>
+      <p className='hint'>{t('next_start_note')}</p>
+      <Button type='submit' fullWidth disabled={settings.isSaving}>
+        {t(settings.isSaving ? 'saving' : 'save_settings')}
+      </Button>
+      {saved && (
+        <p className='positive' role='status'>
+          {t('saved')}
+        </p>
+      )}
+      {failed && (
+        <p className='error-text' role='alert'>
+          {t('settings_failed')}
+        </p>
+      )}
+    </form>
   )
 }

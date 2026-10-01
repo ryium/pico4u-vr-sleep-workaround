@@ -21,7 +21,6 @@
     "format:check": "oxfmt --check src"
   },
   "dependencies": {
-    "@charcoal-ui/icons": "^6.1.0",
     "@charcoal-ui/react": "^6.1.0",
     "@charcoal-ui/theme": "6.1.0",
     "@tauri-apps/api": "^2.11.1",
