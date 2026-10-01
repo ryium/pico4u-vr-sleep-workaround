@@ -111,6 +111,8 @@ export function useConnection(
     else setAutoStatus('skipped')
   }, [config, connect, mode, ip])
 
+  const dismiss = useCallback(() => setAutoStatus('skipped'), [])
+
   const selectMode = (nextMode: ConnectionMode | null) =>
     perform(async () => {
       setAutoStatus('skipped')
@@ -130,6 +132,7 @@ export function useConnection(
     connect,
     selectMode,
     setup,
+    dismiss,
     connected: isConnected(result, mode),
   }
 }

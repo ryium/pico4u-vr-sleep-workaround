@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import { api } from '../lib/api'
 import type { ConnectionMode } from '../types'
@@ -10,6 +10,11 @@ export function useRuntime() {
   const [debug, setDebug] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [logs, setLogs] = useState<string[]>([])
+  const addLog = useCallback((message: string) => {
+    setLogs((values) =>
+      [`[${new Date().toLocaleTimeString()}] ${message}`, ...values].slice(0, 300),
+    )
+  }, [])
   const lifecycle = useRef<AbortController | null>(null)
   const lock = useRef(false)
   useEffect(() => {
@@ -27,17 +32,14 @@ export function useRuntime() {
         if (!controller.signal.aborted) setError(String(e))
       })
     const unlisten = listen<string>('debug-log', (event) => {
-      if (!controller.signal.aborted)
-        setLogs((values) =>
-          [`[${new Date().toLocaleTimeString()}] ${event.payload}`, ...values].slice(0, 300),
-        )
+      if (!controller.signal.aborted) addLog(event.payload)
     }).catch(() => () => {})
     return () => {
       controller.abort()
       void unlisten.then((stop) => stop())
       lock.current = false
     }
-  }, [])
+  }, [addLog])
   const toggle = async (mode: ConnectionMode | null, connected: boolean, blocked: boolean) => {
     const controller = lifecycle.current
     if (!controller || lock.current || !ready || blocked || (!running && (!mode || !connected)))
@@ -77,5 +79,5 @@ export function useRuntime() {
       if (!controller.signal.aborted) setError(String(e))
     }
   }
-  return { running, ready, busy, debug, error, logs, toggle, toggleDebug }
+  return { running, ready, busy, debug, error, logs, addLog, toggle, toggleDebug }
 }
