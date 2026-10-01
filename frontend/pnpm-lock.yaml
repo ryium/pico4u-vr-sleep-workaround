@@ -109,9 +109,6 @@ importers:
 
   .:
     dependencies:
-      '@charcoal-ui/icons':
-        specifier: ^6.1.0
-        version: 6.1.0(react@19.2.8)
       '@charcoal-ui/react':
         specifier: ^6.1.0
         version: 6.1.0(react-aria@3.52.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-stately@3.50.0(react@19.2.8))(react@19.2.8)
