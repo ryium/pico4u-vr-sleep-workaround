@@ -1,4 +1,3 @@
-use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_shell::ShellExt;
@@ -33,12 +32,13 @@ pub async fn run_adb_host_command(
         }
 
         let mut len_buf = [0u8; 4];
-        if stream.read_exact(&mut len_buf).await.is_err() {
-            return Ok("".to_string());
-        }
+        stream
+            .read_exact(&mut len_buf)
+            .await
+            .map_err(|e| e.to_string())?;
 
-        let len_str = std::str::from_utf8(&len_buf).unwrap_or("0");
-        let len = usize::from_str_radix(len_str, 16).unwrap_or(0);
+        let len_str = std::str::from_utf8(&len_buf).map_err(|e| e.to_string())?;
+        let len = usize::from_str_radix(len_str, 16).map_err(|e| e.to_string())?;
 
         if len > 0 {
             let mut data = vec![0u8; len];
@@ -111,31 +111,34 @@ pub async fn run_adb_device_command(
 }
 
 async fn connect_adb(app: Option<&AppHandle>) -> Result<TcpStream, String> {
-    match timeout(
-        TIMEOUT,
-        TcpStream::connect(format!("127.0.0.1:{}", ADB_PORT)),
-    )
-    .await
-    {
-        Ok(Ok(stream)) => Ok(stream),
-        _ => {
-            if let Some(app) = app {
-                if let Ok(command) = app.shell().sidecar("adb") {
-                    let _ = command.args(["start-server"]).output().await;
-                    if let Ok(Ok(stream)) = timeout(
-                        TIMEOUT,
-                        TcpStream::connect(format!("127.0.0.1:{}", ADB_PORT)),
-                    )
-                    .await
-                    {
-                        // Mark that we started the server so we can safely kill it on exit
-                        let state = app.state::<crate::state::AppState>();
-                        state.adb_started_by_us.store(true, Ordering::SeqCst);
-                        return Ok(stream);
-                    }
-                }
-            }
-            Err("Failed to connect to ADB server and failed to start it.".to_string())
+    if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {
+        return Ok(stream);
+    }
+    let app = app.ok_or("ADB server unavailable")?;
+    let state = app.state::<crate::state::AppState>();
+    let _guard = state.adb_start.lock().await;
+    if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {
+        return Ok(stream);
+    }
+    // Foreground mode gives us a concrete child handle. start-server daemonizes,
+    // so a boolean cannot safely identify which process to terminate at exit.
+    if let Some(child) = state.adb_child.lock().unwrap().take() {
+        let _ = child.kill();
+    }
+    let (mut events, child) = app
+        .shell()
+        .sidecar("adb")
+        .map_err(|e| e.to_string())?
+        .args(["server", "nodaemon"])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    *state.adb_child.lock().unwrap() = Some(child);
+    tokio::spawn(async move { while events.recv().await.is_some() {} });
+    for _ in 0..20 {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {
+            return Ok(stream);
         }
     }
+    Err("Failed to start ADB server".into())
 }
