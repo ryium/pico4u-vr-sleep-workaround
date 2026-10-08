@@ -62,8 +62,8 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'pico4u-vr-sleep-workaround ${{ env.VERSION }}'
-          releaseDraft: false
-          prerelease: false
+          releaseDraft: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: ${{ matrix.args }}
           projectPath: "./"
           generateReleaseNotes: true
