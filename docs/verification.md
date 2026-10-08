@@ -1,6 +1,6 @@
 # Connection and original UI verification
 
-The application version remains **0.2.0**. The original screens and styling are restored. The dependency update, connection refactor and ADB rejection diagnostics remain included in `dev`.
+The application version is **0.2.1-rc1**. The original screens and styling are retained, together with the dependency update, connection refactor and ADB rejection diagnostics. The Windows installer product version is **0.2.1** because MSI requires a numeric version; the application screen and release tag display the full prerelease version.
 
 ## Local run
 
