@@ -5,7 +5,7 @@ use crate::error::{AppError, ErrorCode};
 use crate::state::AppState;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, State};
-use tokio::time::{interval, sleep, timeout, Duration, MissedTickBehavior};
+use tokio::time::{Duration, MissedTickBehavior, interval, sleep, timeout};
 
 #[tauri::command]
 pub fn get_running(state: State<'_, AppState>) -> bool {

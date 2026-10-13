@@ -154,7 +154,8 @@ mod tests {
             Err(AppError::with(ErrorCode::WirelessRefused, refused))
         );
 
-        let unreachable = "cannot connect to 192.168.1.20:5555: A connection attempt failed... (10060)";
+        let unreachable =
+            "cannot connect to 192.168.1.20:5555: A connection attempt failed... (10060)";
         assert_eq!(
             classify_connect_reply(unreachable),
             Err(AppError::with(ErrorCode::WirelessUnreachable, unreachable))

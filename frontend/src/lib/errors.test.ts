@@ -37,10 +37,18 @@ describe('errors classification and formatting', () => {
 
   it('formats error logs with or without detail', () => {
     const err = { code: 'usb_not_found' as ErrorCode, detail: 'check cable' }
-    const titleOnly = formatErrorLog(err, (k) => (k === 'errors.usb_not_found.title' ? '見つかりません' : k), false)
+    const titleOnly = formatErrorLog(
+      err,
+      (k) => (k === 'errors.usb_not_found.title' ? '見つかりません' : k),
+      false,
+    )
     expect(titleOnly).toBe('見つかりません')
 
-    const withDetail = formatErrorLog(err, (k) => (k === 'errors.usb_not_found.title' ? '見つかりません' : k), true)
+    const withDetail = formatErrorLog(
+      err,
+      (k) => (k === 'errors.usb_not_found.title' ? '見つかりません' : k),
+      true,
+    )
     expect(withDetail).toBe('見つかりません (check cable)')
   })
 

@@ -2,7 +2,16 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-brand: #81c784;
+  --color-brand: #3fa66b;
+  --color-brand-hover: #2f8c57;
+  --color-brand-tint: #e6f4ec;
+
+  --color-app-bg: #f7f8f7;
+  --color-app-card: #ffffff;
+  --color-app-text: #1f2421;
+  --color-app-muted: #6b7570;
+  --color-app-border: #e5e8e6;
+
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -55,17 +64,37 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-body {
-  @apply font-sans bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
-}
-
 :root {
-  --charcoal-brand: #81c784;
-  --charcoal-brand-hover: #66bb6a;
-  --charcoal-brand-press: #4caf50;
+  --app-bg: #f7f8f7;
+  --app-card: #ffffff;
+  --app-text: #1f2421;
+  --app-text-muted: #6b7570;
+  --app-border: #e5e8e6;
+
+  --charcoal-brand: #3fa66b;
+  --charcoal-brand-hover: #2f8c57;
+  --charcoal-brand-press: #267347;
 }
 
-/* Preserve the original green buttons with Charcoal 6's token names. */
+.dark {
+  --app-bg: #14181b;
+  --app-card: #1e2428;
+  --app-text: #e8ecea;
+  --app-text-muted: #9aa5a0;
+  --app-border: #2d353b;
+
+  --charcoal-brand: #5cc489;
+  --charcoal-brand-hover: #4fb379;
+  --charcoal-brand-press: #3fa66b;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  @apply font-sans transition-colors duration-200 select-none;
+}
+
+/* Charcoal 6 integration */
 :root.ch-token-v2,
 :root.ch-token-v2[data-theme] {
   --charcoal-color-container-primary-default: var(--charcoal-brand);
@@ -93,12 +122,37 @@ body {
   }
 }
 
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(63, 166, 107, 0.4),
+      inset 0 0 20px rgba(63, 166, 107, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 12px rgba(63, 166, 107, 0),
+      inset 0 0 30px rgba(63, 166, 107, 0.4);
+  }
+}
+
 .animate-spin {
   animation: spin 0.8s linear infinite;
 }
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
+}
+
+.animate-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(63, 166, 107, 0.3);
+  }
 }
 
 /* Custom minimal scrollbar */
@@ -112,7 +166,7 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--color-gray-300);
   border-radius: 9999px;
-  border: 1px solid transparent; /* adds a bit of padding effect if combined with background-clip */
+  border: 1px solid transparent;
   background-clip: content-box;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {

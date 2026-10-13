@@ -1,14 +1,14 @@
 use crate::adb_client::{run_adb_device_command, run_adb_host_command};
-use crate::config::{load_config, save_config, AppConfig};
+use crate::config::{AppConfig, load_config, save_config};
 use crate::connection::{
-    self, parse_device_rows, probe_usb, wireless_candidates, ConnectionMode, ConnectionStatus,
-    UsbProbe,
+    self, ConnectionMode, ConnectionStatus, UsbProbe, parse_device_rows, probe_usb,
+    wireless_candidates,
 };
-use crate::error::{classify_connect_reply, AppError, ErrorCode};
+use crate::error::{AppError, ErrorCode, classify_connect_reply};
 use crate::state::AppState;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, State};
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(25);
 
@@ -203,9 +203,7 @@ pub async fn setup_wireless(
 
         // Step 4: Enable TCP/IP on headset & connect
         emit_progress(&app, SetupStep::Wireless, StepState::Running, None);
-        if let Err(e) =
-            run_adb_device_command(Some(&app), Some(&usb_serial), "tcpip:5555").await
-        {
+        if let Err(e) = run_adb_device_command(Some(&app), Some(&usb_serial), "tcpip:5555").await {
             emit_progress(
                 &app,
                 SetupStep::Wireless,

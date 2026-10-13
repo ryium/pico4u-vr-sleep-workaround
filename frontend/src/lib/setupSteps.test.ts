@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  INITIAL_SETUP_STEPS,
-  updateSetupSteps,
-  type SetupProgressPayload,
-} from './setupSteps'
+import { INITIAL_SETUP_STEPS, updateSetupSteps, type SetupProgressPayload } from './setupSteps'
 
 describe('setupSteps reducer', () => {
   it('starts with initial steps in idle state', () => {

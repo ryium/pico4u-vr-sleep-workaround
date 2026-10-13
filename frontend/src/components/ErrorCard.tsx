@@ -34,7 +34,9 @@ export function ErrorCard({ error, fallbackMessage }: ErrorCardProps) {
       {Array.isArray(hints) && hints.length > 0 && (
         <ul className='list-disc list-inside text-xs space-y-1 text-red-600 dark:text-red-300/90 pl-1'>
           {hints.map((hint, idx) => (
-            <li key={idx} className='leading-relaxed'>{hint}</li>
+            <li key={idx} className='leading-relaxed'>
+              {hint}
+            </li>
           ))}
         </ul>
       )}

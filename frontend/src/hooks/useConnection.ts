@@ -104,11 +104,7 @@ export function useConnection(
           last_connection_mode: targetMode,
           ip_address: targetIp.trim(),
         })
-        await retry(
-          () => api.connect(targetMode, next.ip_address, signal),
-          signal,
-          setAttempt,
-        )
+        await retry(() => api.connect(targetMode, next.ip_address, signal), signal, setAttempt)
         return next
       }, true),
     [perform, mode, ip, update],

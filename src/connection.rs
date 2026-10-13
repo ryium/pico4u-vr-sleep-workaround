@@ -149,13 +149,10 @@ pub fn parse_wifi_on(output: &str) -> Option<bool> {
 }
 
 pub async fn wifi_enabled(app: &AppHandle, serial: &str) -> Option<bool> {
-    let output = run_adb_device_command(
-        Some(app),
-        Some(serial),
-        "shell:settings get global wifi_on",
-    )
-    .await
-    .ok()?;
+    let output =
+        run_adb_device_command(Some(app), Some(serial), "shell:settings get global wifi_on")
+            .await
+            .ok()?;
     parse_wifi_on(&output)
 }
 
@@ -365,7 +362,10 @@ mod tests {
         let candidates = wireless_candidates(&rows, Some("192.168.1.20"));
         assert_eq!(
             candidates,
-            vec!["192.168.1.20:5555".to_string(), "192.168.1.50:5555".to_string()]
+            vec![
+                "192.168.1.20:5555".to_string(),
+                "192.168.1.50:5555".to_string()
+            ]
         );
     }
 
