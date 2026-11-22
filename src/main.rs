@@ -10,22 +10,37 @@ mod connection;
 mod error;
 mod runtime;
 mod state;
+mod steamvr;
 
 use crate::commands::*;
 use crate::runtime::*;
 use crate::state::AppState;
+use std::sync::atomic::Ordering;
 use tauri::Manager;
 
 fn main() {
+    let launched_by_steamvr = crate::steamvr::is_steamvr_launch_arg(std::env::args());
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(AppState::default())
-        .setup(|app| {
+        .setup(move |app| {
+            let state = app.state::<AppState>();
+            state
+                .launched_by_steamvr
+                .store(launched_by_steamvr, Ordering::SeqCst);
+
             if let Some(window) = app.get_webview_window("main") {
                 let suffix = if cfg!(debug_assertions) { "-dev" } else { "" };
                 let title = format!("pico4u V睡ツール v{}{}", env!("CARGO_PKG_VERSION"), suffix);
                 let _ = window.set_title(&title);
+                if launched_by_steamvr {
+                    let _ = window.minimize();
+                }
             }
+
+            let _ = crate::steamvr::ensure_registered(app.handle());
+            crate::steamvr::spawn_steamvr_exit_monitor(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -44,16 +59,7 @@ fn main() {
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
                 let state = app.state::<AppState>();
-                for slot in [&state.keep_awake_task, &state.dim_task] {
-                    if let Some(task) = slot.lock().unwrap().take() {
-                        task.abort();
-                    }
-                }
-                // Kill only the foreground server child created by this app.
-                // Never kill a shared server, or all processes named adb.exe.
-                if let Some(child) = state.adb_child.lock().unwrap().take() {
-                    let _ = child.kill();
-                }
+                state.cleanup();
             }
         });
 }

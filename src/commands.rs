@@ -290,13 +290,16 @@ pub async fn save_config_cmd(
     config
         .validate()
         .map_err(|e| AppError::with(ErrorCode::Unknown, e))?;
-    if state.is_running.load(Ordering::SeqCst) {
-        let current = load_config(&app);
-        if config.last_connection_mode != current.last_connection_mode
-            || config.ip_address != current.ip_address
-        {
-            return Err(AppError::new(ErrorCode::AlreadyRunning));
-        }
+    let current = load_config(&app);
+    if state.is_running.load(Ordering::SeqCst)
+        && (config.last_connection_mode != current.last_connection_mode
+            || config.ip_address != current.ip_address)
+    {
+        return Err(AppError::new(ErrorCode::AlreadyRunning));
     }
-    save_config(&app, &config).map_err(|e| AppError::with(ErrorCode::Unknown, e))
+    save_config(&app, &config).map_err(|e| AppError::with(ErrorCode::Unknown, e))?;
+    if config.steamvr_auto_launch != current.steamvr_auto_launch || config.steamvr_auto_launch {
+        let _ = crate::steamvr::sync_auto_launch(&app, config.steamvr_auto_launch);
+    }
+    Ok(())
 }

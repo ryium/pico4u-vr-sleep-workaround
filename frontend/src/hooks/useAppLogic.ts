@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { listen } from '@tauri-apps/api/event'
 import { useSettings } from './useSettings'
@@ -35,6 +35,45 @@ export function useAppLogic() {
     'idle' | 'loading' | 'success' | 'error'
   >('idle')
   const [setupSteps, setSetupSteps] = useState<SetupStepItem[]>(INITIAL_SETUP_STEPS)
+  const autoStartedRef = useRef(false)
+
+  useEffect(() => {
+    if (autoStartedRef.current) return
+    if (connection.autoStatus === 'skipped') {
+      autoStartedRef.current = true
+      return
+    }
+    if (
+      connection.autoStatus !== 'success' ||
+      !connection.connected ||
+      connection.busy ||
+      settings.isSaving ||
+      !runtime.ready ||
+      runtime.busy ||
+      !mode
+    ) {
+      return
+    }
+    autoStartedRef.current = true
+    if (config?.steamvr_auto_launch && !runtime.running) {
+      const interval = config.keep_awake_interval_secs ?? 3
+      void runtime.toggle(mode, true, false).then((ok) => {
+        if (ok) {
+          runtime.addLog(t('log_started_loop', { interval }))
+        }
+      })
+    }
+  }, [
+    config?.steamvr_auto_launch,
+    config?.keep_awake_interval_secs,
+    connection.autoStatus,
+    connection.connected,
+    connection.busy,
+    settings.isSaving,
+    runtime,
+    mode,
+    t,
+  ])
 
   useEffect(() => {
     const unlisten = listen<SetupProgressPayload>('setup-progress', (event) => {
@@ -105,8 +144,12 @@ export function useAppLogic() {
   const toggleKeepAwake = async () => {
     const wasRunning = runtime.running
     const interval = config?.keep_awake_interval_secs ?? 3
-    await runtime.toggle(mode, connection.connected, connection.busy || settings.isSaving)
-    if (!runtime.error) {
+    const ok = await runtime.toggle(
+      mode,
+      connection.connected,
+      connection.busy || settings.isSaving,
+    )
+    if (ok) {
       runtime.addLog(wasRunning ? t('log_stopped_loop') : t('log_started_loop', { interval }))
     }
   }
@@ -143,6 +186,7 @@ export function useAppLogic() {
     connectionError,
     dimAfterHours: config?.dim_delay_hours ?? 1,
     keepAwakeInterval: config?.keep_awake_interval_secs ?? 3,
+    steamVrAutoLaunch: config?.steamvr_auto_launch ?? false,
     changeLanguage: (language: string) => {
       void i18n.changeLanguage(language)
     },
@@ -156,6 +200,8 @@ export function useAppLogic() {
     updateDimDelay: (hours: number) => settings.update({ dim_delay_hours: hours }),
     updateKeepAwakeInterval: (seconds: number) =>
       settings.update({ keep_awake_interval_secs: seconds }),
+    updateSteamVrAutoLaunch: (enabled: boolean) =>
+      settings.update({ steamvr_auto_launch: enabled }),
     autoConnectStatus: connection.autoStatus,
     autoConnectType: mode,
     autoConnectAttempt: connection.attempt,

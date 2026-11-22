@@ -274,6 +274,9 @@ const resources = {
       keep_awake_interval_label: 'Wake signal interval (seconds):',
       keep_awake_interval_note:
         'The lower the value, the less likely the screen is to dim; however, if the value is too high, the floor level may be reset',
+      steamvr_auto_launch_label: 'Launch with SteamVR',
+      steamvr_auto_launch_note:
+        'Starts minimized with SteamVR, auto-starts sleep prevention after connecting, and quits when SteamVR exits',
       back_to_mode_select: 'Back to mode selection',
       tab_connection: 'Connection',
       tab_logs: 'Logs',
@@ -407,6 +410,9 @@ const resources = {
       keep_awake_interval_label: '信号の送信間隔（秒）:',
       keep_awake_interval_note:
         '値が小さいほど画面が暗転しにくくなりますが、大きすぎるとフロアレベルがリセットされる可能性があります',
+      steamvr_auto_launch_label: 'SteamVRと連動して自動起動・終了',
+      steamvr_auto_launch_note:
+        '最小化状態で起動し、自動接続後にスリープ回避を開始します。SteamVR終了時に自動で終了します',
       back_to_mode_select: 'モード選択に戻る',
       tab_connection: '接続',
       tab_logs: 'ログ',
