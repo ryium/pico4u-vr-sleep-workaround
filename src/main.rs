@@ -8,52 +8,38 @@ mod commands;
 mod config;
 mod connection;
 mod error;
+mod i18n;
 mod runtime;
 mod state;
+mod ui;
 
-use crate::commands::*;
-use crate::runtime::*;
 use crate::state::AppState;
-use tauri::Manager;
+use crate::ui::{AppAssets, PicoSleepApp, window_options};
+use gpui::{App, AppContext as _, Application};
+use std::sync::Arc;
 
 fn main() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
-        .manage(AppState::default())
-        .setup(|app| {
-            if let Some(window) = app.get_webview_window("main") {
-                let suffix = if cfg!(debug_assertions) { "-dev" } else { "" };
-                let title = format!("pico4u V睡ツール v{}{}", env!("CARGO_PKG_VERSION"), suffix);
-                let _ = window.set_title(&title);
-            }
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            check_connection_status,
-            try_auto_connect,
-            setup_wireless,
-            start_keep_awake,
-            stop_keep_awake,
-            get_running,
-            set_debug_mode,
-            get_config,
-            save_config_cmd
-        ])
-        .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|app, event| {
-            if let tauri::RunEvent::Exit = event {
-                let state = app.state::<AppState>();
-                for slot in [&state.keep_awake_task, &state.dim_task] {
-                    if let Some(task) = slot.lock().unwrap().take() {
-                        task.abort();
-                    }
+    let state = Arc::new(AppState::default());
+
+    Application::new()
+        .with_assets(AppAssets)
+        .run(move |cx: &mut App| {
+            let state_for_quit = Arc::clone(&state);
+            cx.on_window_closed(move |cx| {
+                if cx.windows().is_empty() {
+                    state_for_quit.shutdown();
+                    cx.quit();
                 }
-                // Kill only the foreground server child created by this app.
-                // Never kill a shared server, or all processes named adb.exe.
-                if let Some(child) = state.adb_child.lock().unwrap().take() {
-                    let _ = child.kill();
-                }
-            }
+            })
+            .detach();
+
+            let state_for_window = Arc::clone(&state);
+            let options = window_options(cx);
+            cx.open_window(options, move |window, cx| {
+                cx.new(|cx| PicoSleepApp::new(state_for_window, window, cx))
+            })
+            .expect("error while opening GPUI application window");
+
+            cx.activate(true);
         });
 }

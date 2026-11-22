@@ -17,10 +17,11 @@ Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
 
 $toolsDir = Join-Path $extractPath "platform-tools"
 
-# Target file name for Tauri sidecar (Windows x64)
+# Target file names for bundled ADB sidecar (Windows x64)
 $targetName = "adb-x86_64-pc-windows-msvc.exe"
 
 Write-Host "Copying files to $binDir..."
+Copy-Item (Join-Path $toolsDir "adb.exe") (Join-Path $binDir "adb.exe") -Force
 Copy-Item (Join-Path $toolsDir "adb.exe") (Join-Path $binDir $targetName) -Force
 Copy-Item (Join-Path $toolsDir "AdbWinApi.dll") (Join-Path $binDir "AdbWinApi.dll") -Force
 Copy-Item (Join-Path $toolsDir "AdbWinUsbApi.dll") (Join-Path $binDir "AdbWinUsbApi.dll") -Force

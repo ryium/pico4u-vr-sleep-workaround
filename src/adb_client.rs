@@ -1,6 +1,7 @@
+use crate::state::AppState;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::time::Duration;
-use tauri::{AppHandle, Manager};
-use tauri_plugin_shell::ShellExt;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
@@ -56,11 +57,11 @@ async fn read_adb_status<R: AsyncRead + Unpin>(
 }
 
 pub async fn run_adb_host_command(
-    app: Option<&AppHandle>,
+    state: Option<&AppState>,
     command: &str,
 ) -> Result<String, String> {
     timeout(TIMEOUT, async {
-        let mut stream = connect_adb(app).await?;
+        let mut stream = connect_adb(state).await?;
 
         let req = format!("{:04x}{}", command.len(), command);
         stream
@@ -95,12 +96,12 @@ pub async fn run_adb_host_command(
 }
 
 pub async fn run_adb_device_command(
-    app: Option<&AppHandle>,
+    state: Option<&AppState>,
     serial: Option<&str>,
     command: &str,
 ) -> Result<String, String> {
     timeout(TIMEOUT, async {
-        let mut stream = connect_adb(app).await?;
+        let mut stream = connect_adb(state).await?;
 
         let transport_req = if let Some(s) = serial {
             format!("host:transport:{}", s)
@@ -144,30 +145,73 @@ pub async fn run_adb_device_command(
     .map_err(|_| "ADB device command timed out".to_string())?
 }
 
-async fn connect_adb(app: Option<&AppHandle>) -> Result<TcpStream, String> {
+fn find_adb_binary() -> PathBuf {
+    let binary_names = ["adb.exe", "adb-x86_64-pc-windows-msvc.exe", "adb"];
+    let mut base_dirs = Vec::new();
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(exe_dir) = exe.parent()
+    {
+        base_dirs.push(exe_dir.to_path_buf());
+        base_dirs.push(exe_dir.join("bin"));
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        base_dirs.push(cwd.join("bin"));
+        base_dirs.push(cwd);
+    }
+
+    for dir in base_dirs {
+        for name in binary_names {
+            let candidate = dir.join(name);
+            if candidate.is_file() {
+                return candidate;
+            }
+        }
+    }
+
+    PathBuf::from(if cfg!(windows) { "adb.exe" } else { "adb" })
+}
+
+async fn connect_adb(state: Option<&AppState>) -> Result<TcpStream, String> {
     if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {
         return Ok(stream);
     }
-    let app = app.ok_or("ADB server unavailable")?;
-    let state = app.state::<crate::state::AppState>();
+    let state = state.ok_or("ADB server unavailable")?;
     let _guard = state.adb_start.lock().await;
     if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {
         return Ok(stream);
     }
     // Foreground mode gives us a concrete child handle. start-server daemonizes,
     // so a boolean cannot safely identify which process to terminate at exit.
-    if let Some(child) = state.adb_child.lock().unwrap().take() {
+    if let Some(mut child) = state.adb_child.lock().unwrap().take() {
         let _ = child.kill();
+        let _ = child.wait();
     }
-    let (mut events, child) = app
-        .shell()
-        .sidecar("adb")
-        .map_err(|e| e.to_string())?
+
+    let adb_path = find_adb_binary();
+    let mut command = Command::new(&adb_path);
+    command
         .args(["server", "nodaemon"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    if let Some(parent) = adb_path.parent()
+        && !parent.as_os_str().is_empty()
+        && parent.is_dir()
+    {
+        command.current_dir(parent);
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let child = command
         .spawn()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Failed to start ADB server: {e}"))?;
     *state.adb_child.lock().unwrap() = Some(child);
-    tokio::spawn(async move { while events.recv().await.is_some() {} });
+
     for _ in 0..20 {
         tokio::time::sleep(Duration::from_millis(100)).await;
         if let Ok(stream) = TcpStream::connect(("127.0.0.1", ADB_PORT)).await {

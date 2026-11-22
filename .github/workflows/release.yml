@@ -14,33 +14,25 @@ jobs:
       matrix:
         include:
           - platform: "windows-latest"
-            args: "--verbose"
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
 
-      - name: install pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          run_install: false
-
-      - name: setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: install rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: rust cache
         uses: swatinem/rust-cache@v2
+
+      - name: configure fxc for gpui
+        shell: pwsh
+        run: |
+          $fxc = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\fxc.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+          if ($fxc) {
+              Write-Host "Found fxc.exe at: $($fxc.FullName)"
+              "GPUI_FXC_PATH=$($fxc.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
 
       - name: setup adb
         run: .\scripts\setup_adb.ps1
@@ -55,20 +47,33 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: build and create release
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'pico4u-vr-sleep-workaround ${{ env.VERSION }}'
-          releaseDraft: ${{ contains(github.ref_name, '-') }}
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          args: ${{ matrix.args }}
-          projectPath: "./"
-          generateReleaseNotes: true
+      - name: build release binary
+        run: cargo build --release --locked
 
-      - name: list targets
-        if: failure()
+      - name: package release archive
+        shell: pwsh
         run: |
-          Get-ChildItem -Recurse target
+          $staging = "target/release/package/pico4u-vr-sleep-workaround"
+          New-Item -ItemType Directory -Path $staging -Force | Out-Null
+          Copy-Item "target/release/pico4u-vr-sleep-workaround.exe" $staging -Force
+          Copy-Item "bin/adb.exe" $staging -Force
+          Copy-Item "bin/AdbWinApi.dll" $staging -Force
+          Copy-Item "bin/AdbWinUsbApi.dll" $staging -Force
+          Copy-Item "LICENSE" $staging -Force
+          Copy-Item "LICENSES" (Join-Path $staging "LICENSES") -Recurse -Force
+
+          $archive = "target/release/pico4u-vr-sleep-workaround-$($env:VERSION)-windows-x64.zip"
+          Compress-Archive -Path "$staging/*" -DestinationPath $archive -Force
+          "ARCHIVE_PATH=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: publish github release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FLAGS="--generate-notes --title \"pico4u-vr-sleep-workaround ${{ env.VERSION }}\""
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+            gh release create "${{ github.ref_name }}" "${{ env.ARCHIVE_PATH }}" --generate-notes --title "pico4u-vr-sleep-workaround ${{ env.VERSION }}" --draft --prerelease
+          else
+            gh release create "${{ github.ref_name }}" "${{ env.ARCHIVE_PATH }}" --generate-notes --title "pico4u-vr-sleep-workaround ${{ env.VERSION }}"
+          fi

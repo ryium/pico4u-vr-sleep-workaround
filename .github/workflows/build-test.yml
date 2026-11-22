@@ -11,71 +11,61 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: install pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          run_install: false
-
-      - name: setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: install rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: rust cache
         uses: swatinem/rust-cache@v2
 
+      - name: configure fxc for gpui
+        shell: pwsh
+        run: |
+          $fxc = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\fxc.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+          if ($fxc) {
+              Write-Host "Found fxc.exe at: $($fxc.FullName)"
+              "GPUI_FXC_PATH=$($fxc.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
       - name: setup adb
         run: .\scripts\setup_adb.ps1
 
-      - name: bundle tauri app
+      - name: check, test, and lint rust app
         run: cargo fmt --check && cargo test --locked && cargo clippy --locked -- -D warnings
 
-      - name: build installers
-        run: pnpm tauri build --no-sign
+      - name: build release binary
+        run: cargo build --release --locked
 
-      - name: verify bundled adb
+      - name: package and verify bundled adb
         shell: pwsh
         run: |
-          # Find the generated installer
-          $installer = Get-ChildItem "target/release/bundle/nsis/*_x64-setup.exe" -ErrorAction Stop | Select-Object -First 1
-          Write-Host "Found installer: $($installer.FullName)"
-          
-          # Extract the installer to a temporary directory
-          Write-Host "Extracting installer..."
-          7z x $($installer.FullName) -oextracted_app
-          
-          # 1. Verify DLLs are present (Searching recursively because NSIS often extracts to subdirs like $_OUTDIR)
+          $bundleDir = "target/release/bundle/gpui"
+          New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
+          Copy-Item "target/release/pico4u-vr-sleep-workaround.exe" $bundleDir -Force
+          Copy-Item "bin/adb.exe" $bundleDir -Force
+          Copy-Item "bin/AdbWinApi.dll" $bundleDir -Force
+          Copy-Item "bin/AdbWinUsbApi.dll" $bundleDir -Force
+          Copy-Item "LICENSE" $bundleDir -Force
+          Copy-Item "LICENSES" (Join-Path $bundleDir "LICENSES") -Recurse -Force
+
+          # 1. Verify DLLs are present
           Write-Host "Verifying DLL presence..."
           $required_dlls = @("AdbWinApi.dll", "AdbWinUsbApi.dll")
           foreach ($dll in $required_dlls) {
-              $found = Get-ChildItem "extracted_app" -Filter $dll -Recurse | Select-Object -First 1
+              $found = Get-ChildItem $bundleDir -Filter $dll -Recurse | Select-Object -First 1
               if ($found) {
                   Write-Host "✓ $dll found at: $($found.FullName)"
               } else {
-                  throw "ERROR: $dll not found in the extracted application!"
+                  throw "ERROR: $dll not found in the packaged application!"
               }
           }
-          
+
           # 2. Verify ADB sidecar can execute
           Write-Host "Verifying ADB execution..."
-          $adb_exe = Get-ChildItem "extracted_app" -Filter "*adb*" -Recurse | Where-Object { $_.Name -like "*.exe" } | Select-Object -First 1
-          
+          $adb_exe = Get-ChildItem $bundleDir -Filter "*adb*.exe" -Recurse | Select-Object -First 1
           if ($null -eq $adb_exe) {
-              Write-Host "ERROR: ADB executable not found! Listing all files in extracted_app for debugging:"
-              Get-ChildItem "extracted_app" -Recurse | Select-Object FullName
-              throw "ERROR: ADB executable not found in the extracted application!"
+              throw "ERROR: ADB executable not found in the packaged application!"
           }
-          
           Write-Host "Found sidecar at: $($adb_exe.FullName)"
-          
-          # Run adb version. If DLLs are missing, this will fail.
           & $adb_exe.FullName version
           if ($LASTEXITCODE -ne 0) {
               throw "ERROR: Bundled ADB failed to execute! This usually means required DLLs are missing or inaccessible."
