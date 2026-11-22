@@ -43,7 +43,7 @@ export function useRuntime() {
   const toggle = async (mode: ConnectionMode | null, connected: boolean, blocked: boolean) => {
     const controller = lifecycle.current
     if (!controller || lock.current || !ready || blocked || (!running && (!mode || !connected)))
-      return
+      return false
     lock.current = true
     setBusy(true)
     setError(null)
@@ -51,6 +51,7 @@ export function useRuntime() {
       if (running) await api.stop(controller.signal)
       else await api.start(mode!, controller.signal)
       if (!controller.signal.aborted) setRunning(!running)
+      return !controller.signal.aborted
     } catch (e) {
       if (!controller.signal.aborted) {
         setError(String(e))
@@ -62,6 +63,7 @@ export function useRuntime() {
           if (!controller.signal.aborted) setReady(false)
         }
       }
+      return false
     } finally {
       if (!controller.signal.aborted) {
         lock.current = false

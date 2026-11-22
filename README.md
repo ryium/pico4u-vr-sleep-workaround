@@ -13,6 +13,7 @@ pico4u-vr-sleep-workaround is a workaround tool designed to prevent the Pico 4 U
 - **Connection Modes**: Supports both Wired (USB) and Wireless (TCP/IP) ADB connections.
 - **Device Validation**: Automatically detects the connected device and verifies it is a Pico 4 Ultra (checks for `A9210` in the model name).
 - **Auto-Dimming**: Optionally dims the headset's screen brightness to the lowest level (`1`) after a configurable delay (in hours) to prevent screen burn-in and save power.
+- **SteamVR Startup Integration**: Registers as a SteamVR Startup Overlay App (`.vrmanifest`) and can be toggled in Settings to automatically launch minimized with SteamVR, auto-start sleep prevention once connected, and exit when SteamVR closes.
 - **Multi-language Support**: User Interface is available in English and Japanese.
 
 ## 📸 Screenshot

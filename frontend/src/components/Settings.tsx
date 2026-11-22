@@ -11,6 +11,8 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     updateDimDelay,
     keepAwakeInterval,
     updateKeepAwakeInterval,
+    steamVrAutoLaunch,
+    updateSteamVrAutoLaunch,
     isDebug,
     toggleDebugMode,
     theme,
@@ -21,6 +23,7 @@ export function Settings({ onClose }: { onClose?: () => void }) {
   const [pendingTheme, setPendingTheme] = useState(theme)
   const [pendingDimAfterHours, setPendingDimAfterHours] = useState(dimAfterHours)
   const [pendingInterval, setPendingInterval] = useState(keepAwakeInterval)
+  const [pendingSteamVrAutoLaunch, setPendingSteamVrAutoLaunch] = useState(steamVrAutoLaunch)
   const [pendingDebug, setPendingDebug] = useState(isDebug)
 
   const handleApply = async () => {
@@ -35,6 +38,9 @@ export function Settings({ onClose }: { onClose?: () => void }) {
     }
     if (pendingInterval !== keepAwakeInterval) {
       await updateKeepAwakeInterval(pendingInterval)
+    }
+    if (pendingSteamVrAutoLaunch !== steamVrAutoLaunch) {
+      await updateSteamVrAutoLaunch(pendingSteamVrAutoLaunch)
     }
     if (pendingDebug !== isDebug) {
       await toggleDebugMode(pendingDebug)
@@ -98,6 +104,17 @@ export function Settings({ onClose }: { onClose?: () => void }) {
             className='w-full text-left'
             showLabel
           />
+        </div>
+
+        <div className='flex flex-col gap-1'>
+          <div className='text-sm font-bold text-[var(--app-text)]'>
+            <Checkbox checked={pendingSteamVrAutoLaunch} onChange={setPendingSteamVrAutoLaunch}>
+              {t('steamvr_auto_launch_label')}
+            </Checkbox>
+          </div>
+          <p className='text-xs text-[var(--app-text-muted)] pl-6'>
+            {t('steamvr_auto_launch_note')}
+          </p>
         </div>
 
         <div className='mt-0.5 text-sm font-bold text-[var(--app-text)]'>

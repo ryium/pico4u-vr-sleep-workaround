@@ -1,7 +1,9 @@
 use crate::connection::ConnectionMode;
+use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -11,6 +13,7 @@ pub struct AppConfig {
     pub ip_address: String,
     pub keep_awake_interval_secs: u64,
     pub last_connection_mode: Option<ConnectionMode>,
+    pub steamvr_auto_launch: bool,
 }
 
 impl AppConfig {
@@ -35,6 +38,7 @@ impl Default for AppConfig {
             ip_address: String::new(),
             keep_awake_interval_secs: 3,
             last_connection_mode: None,
+            steamvr_auto_launch: false,
         }
     }
 }
@@ -47,13 +51,25 @@ fn get_config_path(app: &AppHandle) -> Option<PathBuf> {
 }
 
 pub fn load_config(app: &AppHandle) -> AppConfig {
-    if let Some(path) = get_config_path(app)
+    let mut config = if let Some(path) = get_config_path(app)
         && let Ok(content) = fs::read_to_string(path)
-        && let Ok(config) = serde_json::from_str(&content)
+        && let Ok(parsed) = serde_json::from_str::<AppConfig>(&content)
     {
-        return config;
+        parsed
+    } else {
+        AppConfig::default()
+    };
+
+    if let Some(steamvr_enabled) = crate::steamvr::read_auto_launch() {
+        config.steamvr_auto_launch = steamvr_enabled;
+    } else if app
+        .try_state::<AppState>()
+        .is_some_and(|s| s.launched_by_steamvr.load(Ordering::Relaxed))
+    {
+        config.steamvr_auto_launch = true;
     }
-    AppConfig::default()
+
+    config
 }
 
 pub fn save_config(app: &AppHandle, config: &AppConfig) -> Result<(), String> {
@@ -80,6 +96,7 @@ mod tests {
                 .unwrap();
         assert_eq!(config.keep_awake_interval_secs, 3);
         assert_eq!(config.last_connection_mode, Some(ConnectionMode::Wired));
+        assert!(!config.steamvr_auto_launch);
         assert!(config.validate().is_ok());
     }
     #[test]

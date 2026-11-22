@@ -8,6 +8,7 @@ const initial: AppConfig = {
   keep_awake_interval_secs: 3,
   ip_address: '',
   last_connection_mode: 'wired',
+  steamvr_auto_launch: false,
 }
 it('merges consecutive saves and preserves explicit null in order', async () => {
   let release!: () => void
@@ -22,7 +23,11 @@ it('merges consecutive saves and preserves explicit null in order', async () => 
     .mockResolvedValue(undefined)
   const update = configWriter(initial, save)
   const first = update({ dim_delay_hours: 2 })
-  const second = update({ keep_awake_interval_secs: 5, last_connection_mode: null })
+  const second = update({
+    keep_awake_interval_secs: 5,
+    last_connection_mode: null,
+    steamvr_auto_launch: true,
+  })
   await Promise.resolve()
   expect(save).toHaveBeenCalledTimes(1)
   release()
@@ -33,6 +38,7 @@ it('merges consecutive saves and preserves explicit null in order', async () => 
     dim_delay_hours: 2,
     keep_awake_interval_secs: 5,
     last_connection_mode: null,
+    steamvr_auto_launch: true,
   })
 })
 it('surfaces save failure without poisoning subsequent valid edits', async () => {

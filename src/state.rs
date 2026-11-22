@@ -8,9 +8,25 @@ pub struct AppState {
     pub dim_task: Mutex<Option<JoinHandle<()>>>,
     pub is_running: Arc<AtomicBool>,
     pub debug_mode: Arc<AtomicBool>,
+    pub launched_by_steamvr: Arc<AtomicBool>,
     pub adb_child: Mutex<Option<tauri_plugin_shell::process::CommandChild>>,
     pub adb_start: tokio::sync::Mutex<()>,
     pub operation: tokio::sync::Mutex<()>,
+}
+
+impl AppState {
+    pub fn cleanup(&self) {
+        for slot in [&self.keep_awake_task, &self.dim_task] {
+            if let Some(task) = slot.lock().unwrap().take() {
+                task.abort();
+            }
+        }
+        // Kill only the foreground server child created by this app.
+        // Never kill a shared server, or all processes named adb.exe.
+        if let Some(child) = self.adb_child.lock().unwrap().take() {
+            let _ = child.kill();
+        }
+    }
 }
 
 impl Default for AppState {
@@ -20,6 +36,7 @@ impl Default for AppState {
             dim_task: Mutex::new(None),
             is_running: Arc::new(AtomicBool::new(false)),
             debug_mode: Arc::new(AtomicBool::new(false)),
+            launched_by_steamvr: Arc::new(AtomicBool::new(false)),
             adb_child: Mutex::new(None),
             adb_start: tokio::sync::Mutex::new(()),
             operation: tokio::sync::Mutex::new(()),
