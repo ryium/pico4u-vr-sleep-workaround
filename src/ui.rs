@@ -267,11 +267,79 @@ impl PicoSleepApp {
             last_window_title: String::new(),
         };
 
-        app.start_background_loops(cx);
-        if should_auto_connect {
-            app.trigger_auto_connect(cx);
+        app.apply_preview_env();
+        if std::env::var_os("PICO4U_PREVIEW").is_none() {
+            app.start_background_loops(cx);
+            if should_auto_connect {
+                app.trigger_auto_connect(cx);
+            }
         }
         app
+    }
+
+    fn apply_preview_env(&mut self) {
+        let Ok(preview) = std::env::var("PICO4U_PREVIEW") else {
+            return;
+        };
+        self.auto_connect_status = AutoConnectStatus::Skipped;
+        self.language = Language::Ja;
+        self.pending_language = Language::Ja;
+        match preview.as_str() {
+            "mode-light" => {
+                self.theme_mode = ThemeMode::Light;
+                self.screen = Screen::Mode;
+                self.selected_mode_card = ConnectionMode::Wireless;
+            }
+            "mode-dark" => {
+                self.theme_mode = ThemeMode::Dark;
+                self.screen = Screen::Mode;
+                self.selected_mode_card = ConnectionMode::Wireless;
+            }
+            "wired-light" => {
+                self.theme_mode = ThemeMode::Light;
+                self.screen = Screen::Operate;
+                self.config.last_connection_mode = Some(ConnectionMode::Wired);
+                self.connection_status = Some(ConnectionStatus {
+                    is_usb_connected: true,
+                    is_wifi_ip_available: false,
+                    wifi_ip: None,
+                    is_adb_tcp_connected: false,
+                });
+                self.is_debug = true;
+            }
+            "wired-dark" => {
+                self.theme_mode = ThemeMode::Dark;
+                self.screen = Screen::Operate;
+                self.config.last_connection_mode = Some(ConnectionMode::Wired);
+                self.connection_status = Some(ConnectionStatus {
+                    is_usb_connected: true,
+                    is_wifi_ip_available: false,
+                    wifi_ip: None,
+                    is_adb_tcp_connected: false,
+                });
+                self.is_debug = true;
+            }
+            "settings-light" => {
+                self.theme_mode = ThemeMode::Light;
+                self.pending_theme = ThemeMode::Light;
+                self.screen = Screen::Mode;
+                self.active_sheet = Some(ActiveSheet::Settings);
+            }
+            "settings-dark" => {
+                self.theme_mode = ThemeMode::Dark;
+                self.pending_theme = ThemeMode::Dark;
+                self.screen = Screen::Mode;
+                self.active_sheet = Some(ActiveSheet::Settings);
+            }
+            "mode-en-light" => {
+                self.language = Language::En;
+                self.pending_language = Language::En;
+                self.theme_mode = ThemeMode::Light;
+                self.screen = Screen::Mode;
+                self.selected_mode_card = ConnectionMode::Wireless;
+            }
+            _ => {}
+        }
     }
 
     fn i18n(&self) -> I18n {
@@ -1061,11 +1129,31 @@ impl PicoSleepApp {
 
         div()
             .w_full()
+            .relative()
             .flex()
             .items_center()
             .justify_between()
             .px_8()
             .py(px(6.0))
+            .child(
+                div()
+                    .absolute()
+                    .top(px(17.0))
+                    .left(px(76.0))
+                    .right(px(76.0))
+                    .h(px(2.0))
+                    .flex()
+                    .child(div().flex_1().h_full().bg(if current_idx >= 1 {
+                        palette.brand
+                    } else {
+                        palette.disabled_bg
+                    }))
+                    .child(div().flex_1().h_full().bg(if current_idx >= 2 {
+                        palette.brand
+                    } else {
+                        palette.disabled_bg
+                    })),
+            )
             .children(steps.into_iter().map(|(idx, label)| {
                 let is_done = idx < current_idx;
                 let is_active = idx == current_idx;
@@ -1087,20 +1175,34 @@ impl PicoSleepApp {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .gap(px(6.0))
+                    .gap(px(4.0))
                     .child(
                         div()
-                            .w(px(18.0))
-                            .h(px(18.0))
+                            .w(px(24.0))
+                            .h(px(24.0))
                             .rounded_full()
-                            .bg(dot_bg)
+                            .bg(if is_active {
+                                palette.brand_tint
+                            } else {
+                                rgba(0x00000000).into()
+                            })
                             .flex()
                             .items_center()
                             .justify_center()
-                            .text_size(px(10.0))
-                            .font_weight(FontWeight::BOLD)
-                            .text_color(gpui::white())
-                            .child(if is_done { "✓" } else { "" }),
+                            .child(
+                                div()
+                                    .w(px(16.0))
+                                    .h(px(16.0))
+                                    .rounded_full()
+                                    .bg(dot_bg)
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .text_size(px(10.0))
+                                    .font_weight(FontWeight::BOLD)
+                                    .text_color(gpui::white())
+                                    .child(if is_done { "✓" } else { "" }),
+                            ),
                     )
                     .child(
                         div()
@@ -1534,6 +1636,7 @@ impl PicoSleepApp {
 
         div()
             .id(id)
+            .relative()
             .w_full()
             .p_4()
             .rounded_xl()
@@ -1542,59 +1645,58 @@ impl PicoSleepApp {
             .bg(bg_col)
             .cursor_pointer()
             .on_click(on_click)
+            .when_some(badge, |el, badge_text| {
+                el.child(
+                    div()
+                        .absolute()
+                        .top(px(14.0))
+                        .right(px(14.0))
+                        .px_2()
+                        .py(px(2.0))
+                        .rounded_full()
+                        .bg(palette.brand)
+                        .text_size(px(10.0))
+                        .font_weight(FontWeight::BOLD)
+                        .text_color(gpui::white())
+                        .child(badge_text.to_string()),
+                )
+            })
             .child(
                 div()
                     .w_full()
                     .flex()
                     .items_start()
-                    .justify_between()
                     .gap_3()
                     .child(
                         div()
+                            .p(px(10.0))
+                            .rounded_lg()
+                            .bg(icon_bg)
+                            .flex_shrink_0()
+                            .child(svg().path(icon_path).size(px(22.0)).text_color(icon_col)),
+                    )
+                    .child(
+                        div()
                             .flex()
-                            .items_start()
-                            .gap_3()
+                            .flex_col()
+                            .gap_1()
                             .flex_1()
+                            .min_w(px(0.0))
                             .child(
-                                div().p(px(10.0)).rounded_lg().bg(icon_bg).child(
-                                    svg().path(icon_path).size(px(22.0)).text_color(icon_col),
-                                ),
+                                div()
+                                    .text_size(px(14.0))
+                                    .font_weight(FontWeight::BOLD)
+                                    .text_color(palette.text)
+                                    .child(title.to_string()),
                             )
                             .child(
                                 div()
-                                    .flex()
-                                    .flex_col()
-                                    .gap_1()
-                                    .flex_1()
-                                    .child(
-                                        div()
-                                            .text_size(px(14.0))
-                                            .font_weight(FontWeight::BOLD)
-                                            .text_color(palette.text)
-                                            .child(title.to_string()),
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(12.0))
-                                            .line_height(px(17.0))
-                                            .text_color(palette.text_muted)
-                                            .child(description.to_string()),
-                                    ),
+                                    .text_size(px(12.0))
+                                    .line_height(px(17.0))
+                                    .text_color(palette.text_muted)
+                                    .child(description.to_string()),
                             ),
-                    )
-                    .when_some(badge, |el, badge_text| {
-                        el.child(
-                            div()
-                                .px_2()
-                                .py(px(2.0))
-                                .rounded_full()
-                                .bg(palette.brand)
-                                .text_size(px(10.0))
-                                .font_weight(FontWeight::BOLD)
-                                .text_color(gpui::white())
-                                .child(badge_text.to_string()),
-                        )
-                    }),
+                    ),
             )
             .into_any_element()
     }
