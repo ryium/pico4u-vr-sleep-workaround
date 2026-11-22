@@ -7,18 +7,12 @@ license = "MIT"
 repository = ""
 edition = "2024"
 
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
-
 [dependencies]
-tauri = { version = "2", features = [] }
+anyhow = "1.0"
+chrono = "0.4"
+dirs = "5.0"
+gpui = "0.2.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sys-locale = "0.3"
 tokio = { version = "1", features = ["full"] }
-chrono = "0.4"
-tauri-plugin-shell = "2"
-
-[features]
-# this feature is used for production builds or when `devPath` points to the filesystem
-# DO NOT REMOVE!!
-custom-protocol = ["tauri/custom-protocol"]

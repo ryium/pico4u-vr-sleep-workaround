@@ -1,7 +1,7 @@
 use crate::adb_client::{run_adb_device_command, run_adb_host_command};
 use crate::error::{AppError, ErrorCode};
+use crate::state::AppState;
 use std::net::{Ipv4Addr, SocketAddrV4};
-use tauri::AppHandle;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -10,12 +10,22 @@ pub enum ConnectionMode {
     Wireless,
 }
 
-#[derive(Default, serde::Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize)]
 pub struct ConnectionStatus {
     pub is_usb_connected: bool,
     pub is_wifi_ip_available: bool,
     pub wifi_ip: Option<String>,
     pub is_adb_tcp_connected: bool,
+}
+
+impl ConnectionStatus {
+    pub fn is_connected(&self, mode: Option<ConnectionMode>) -> bool {
+        match mode {
+            Some(ConnectionMode::Wired) => self.is_usb_connected,
+            Some(ConnectionMode::Wireless) => self.is_adb_tcp_connected,
+            None => false,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -148,11 +158,14 @@ pub fn parse_wifi_on(output: &str) -> Option<bool> {
     }
 }
 
-pub async fn wifi_enabled(app: &AppHandle, serial: &str) -> Option<bool> {
-    let output =
-        run_adb_device_command(Some(app), Some(serial), "shell:settings get global wifi_on")
-            .await
-            .ok()?;
+pub async fn wifi_enabled(state: &AppState, serial: &str) -> Option<bool> {
+    let output = run_adb_device_command(
+        Some(state),
+        Some(serial),
+        "shell:settings get global wifi_on",
+    )
+    .await
+    .ok()?;
     parse_wifi_on(&output)
 }
 
@@ -182,9 +195,9 @@ pub fn is_pico(model: &str) -> bool {
     matches!(model.trim(), "A9210" | "PICO 4 Ultra" | "PICO_4_Ultra")
 }
 
-pub async fn verify_pico(app: &AppHandle, serial: &str) -> Result<bool, AppError> {
+pub async fn verify_pico(state: &AppState, serial: &str) -> Result<bool, AppError> {
     let model =
-        run_adb_device_command(Some(app), Some(serial), "shell:getprop ro.product.model").await?;
+        run_adb_device_command(Some(state), Some(serial), "shell:getprop ro.product.model").await?;
     Ok(is_pico(&model))
 }
 
@@ -202,7 +215,7 @@ pub fn matches_transport(serial: &str, mode: ConnectionMode, target: &str) -> bo
 }
 
 pub async fn target_device(
-    app: &AppHandle,
+    state: &AppState,
     mode: ConnectionMode,
     ip: &str,
 ) -> Result<Option<String>, AppError> {
@@ -211,7 +224,7 @@ pub async fn target_device(
     } else {
         String::new()
     };
-    let output = run_adb_host_command(Some(app), "host:devices-l").await?;
+    let output = run_adb_host_command(Some(state), "host:devices-l").await?;
     let mut candidates = Vec::new();
     for device in parse_devices(&output)
         .into_iter()
@@ -221,7 +234,7 @@ pub async fn target_device(
             continue;
         }
         // Never use transport-any: every command must address a verified headset.
-        if verify_pico(app, &device.serial).await? {
+        if verify_pico(state, &device.serial).await? {
             candidates.push(device.serial);
         }
     }
@@ -233,15 +246,15 @@ pub async fn target_device(
 }
 
 pub async fn require_target(
-    app: &AppHandle,
+    state: &AppState,
     mode: ConnectionMode,
     ip: &str,
 ) -> Result<String, AppError> {
-    if let Some(target) = target_device(app, mode, ip).await? {
+    if let Some(target) = target_device(state, mode, ip).await? {
         return Ok(target);
     }
 
-    let output = run_adb_host_command(Some(app), "host:devices-l").await?;
+    let output = run_adb_host_command(Some(state), "host:devices-l").await?;
     let rows = parse_device_rows(&output);
     match mode {
         ConnectionMode::Wired => match probe_usb(&rows) {
@@ -265,24 +278,24 @@ pub fn parse_wifi_ip(output: &str) -> Option<String> {
     })
 }
 
-pub async fn wifi_ip(app: &AppHandle, serial: &str) -> Result<Option<String>, AppError> {
+pub async fn wifi_ip(state: &AppState, serial: &str) -> Result<Option<String>, AppError> {
     let output =
-        run_adb_device_command(Some(app), Some(serial), "shell:ip addr show wlan0").await?;
+        run_adb_device_command(Some(state), Some(serial), "shell:ip addr show wlan0").await?;
     Ok(parse_wifi_ip(&output))
 }
 
 pub async fn status(
-    app: &AppHandle,
+    state: &AppState,
     mode: ConnectionMode,
     ip: &str,
 ) -> Result<ConnectionStatus, AppError> {
     let mut status = ConnectionStatus::default();
-    let usb = target_device(app, ConnectionMode::Wired, "")
+    let usb = target_device(state, ConnectionMode::Wired, "")
         .await
         .ok()
         .flatten();
     let tcp = if mode == ConnectionMode::Wireless && !ip.trim().is_empty() {
-        target_device(app, mode, ip).await.ok().flatten()
+        target_device(state, mode, ip).await.ok().flatten()
     } else {
         None
     };
@@ -292,14 +305,14 @@ pub async fn status(
         // Only show the USB cable for the same physical headset as the TCP target.
         if let Some(usb_serial) = usb.as_deref()
             && let Ok(identity) =
-                run_adb_device_command(Some(app), Some(tcp_serial), "shell:getprop ro.serialno")
+                run_adb_device_command(Some(state), Some(tcp_serial), "shell:getprop ro.serialno")
                     .await
         {
             status.is_usb_connected = identity.trim() == usb_serial;
         }
     }
     if let Some(serial) = tcp.as_deref().or(usb.as_deref())
-        && let Ok(ip) = wifi_ip(app, serial).await
+        && let Ok(ip) = wifi_ip(state, serial).await
     {
         status.wifi_ip = ip;
         status.is_wifi_ip_available = status.wifi_ip.is_some();
@@ -414,5 +427,18 @@ mod tests {
             Some("192.168.1.4".into())
         );
         assert_eq!(parse_wifi_ip("inet6 fe80::1/64"), None);
+    }
+
+    #[test]
+    fn connection_status_matches_selected_transport() {
+        let status = ConnectionStatus {
+            is_usb_connected: true,
+            is_adb_tcp_connected: false,
+            is_wifi_ip_available: true,
+            wifi_ip: Some("192.168.1.4".into()),
+        };
+        assert!(!status.is_connected(Some(ConnectionMode::Wireless)));
+        assert!(status.is_connected(Some(ConnectionMode::Wired)));
+        assert!(!status.is_connected(None));
     }
 }
