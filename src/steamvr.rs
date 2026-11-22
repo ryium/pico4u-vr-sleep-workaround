@@ -36,9 +36,7 @@ pub fn clean_windows_path(path: &Path) -> String {
 }
 
 fn normalize_path_for_compare(raw: &str) -> String {
-    clean_path_str(raw)
-        .replace('/', "\\")
-        .to_ascii_lowercase()
+    clean_path_str(raw).replace('/', "\\").to_ascii_lowercase()
 }
 
 pub fn build_vrmanifest(exe_path: &Path) -> Value {
@@ -449,8 +447,7 @@ mod tests {
         register_manifest_in_appconfig(&appconfig, new_manifest).unwrap();
         register_manifest_in_appconfig(&appconfig, new_manifest).unwrap();
 
-        let parsed: Value =
-            serde_json::from_str(&fs::read_to_string(&appconfig).unwrap()).unwrap();
+        let parsed: Value = serde_json::from_str(&fs::read_to_string(&appconfig).unwrap()).unwrap();
         assert_eq!(parsed["extra_key"], true);
         let paths = parsed["manifest_paths"].as_array().unwrap();
         assert_eq!(paths.len(), 2);
